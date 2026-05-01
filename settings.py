@@ -1,6 +1,5 @@
 from utils import clear
 from time import sleep
-import bcrypt
 from copy import deepcopy
 from auth import change_currency
 from storage import open_file
@@ -120,8 +119,29 @@ def settings(user_data: dict, nickname: str, password: str) -> dict:
             case "currency":
                 old_currency = currency
                 to_return = change_currency(to_return, first=False)
-                print(f"Currency has been successfully changed from {old_currency} to {to_return['user_currency']}.")
-                sleep(2)
+                
+                clear()
+                print("Would you like to change your money amount to match your new currency?")
+                while True:
+                    change_money_value = input("Enter: ")
+                    if change_money_value.lower() in ("yes", "y"):
+                        clear()
+                        to_return["money"] = to_return["money"] / to_return["other_currencies"][old_currency]
+                        print(f"Currency has been successfully changed from {old_currency} to {to_return['user_currency']}")
+                        print(f"Your total money has changed: {round(to_return['money'], 3)} to match your new currency.")
+                        sleep(2.5)
+                        break
+                    elif change_money_value.lower() in ("no", "n"):
+                        clear()
+                        print(f"Currency has been successfully changed from {old_currency} to {to_return['user_currency']}.")
+                        sleep(2)
+                        break
+                    else:
+                        print("Please enter 'yes' or 'no'.")
+                        sleep(.5)
+
+                
+                
                 
             case "pass":
                 clear()

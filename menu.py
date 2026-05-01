@@ -26,7 +26,7 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
     while True:
         clear()
         print("---HOME---")
-        print(f"Total Money: {money} {user_currency}")
+        print(f"Total Money: {round(money, 3)} {user_currency}")
         print()
         print("Main Currencies:")
         print()
@@ -78,7 +78,12 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
                     os.execl(python, python, *sys.argv)
 
                 else:
-                    user_currency = call["user_currency"]
+                    if user_currency != call["user_currency"]:
+                        user_currency = call["user_currency"]
+                        user_data["user_currency"] = user_currency
+                        user_data["other_currencies"] = call["other_currencies"]
+                        user_data["money"] = call["money"]
+                        money = Decimal(user_data["money"])
                     # Password is changed
                     if call["password_is_changed"]:
                         password = call["password"]
@@ -86,7 +91,7 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
                         hashed = bcrypt.hashpw(byte_password, bcrypt.gensalt())
                         user_data["password"] = str(hashed)
 
-                    user_data["user_currency"] = user_currency
+                    
                     if "old_nickname" in call:
                         nickname = call["nickname"]
                         delete_user(call["old_nickname"])
