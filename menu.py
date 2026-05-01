@@ -16,7 +16,7 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
     clear()
 
     # Available functions
-    available: list = ["add", "del", "finy", "curr", "settings", "quit"]
+    available: list = ["add", "del", "finy", "curr", "settings", "quit", "finy chat"]
 
     # Users total money
     money: Decimal = Decimal(user_data["money"])
@@ -37,7 +37,7 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
             print(f"{curr}: {round(value, 3)} {user_currency} - {round(money * value, 3)} {curr}")
         
         print()
-        print("MENU: \n1. ADD - add/change money to/in your account\n2. DEL - delete money from your bank account\n3. FINY - integrated AI to help you with your finances\n4. CURR <currency> - returns detailed overview of the currency\n5. SETTINGS\n6. QUIT")
+        print("MENU: \n1. ADD - add/change money to/in your account\n2. DEL - delete money from your bank account\n3. FINY - integrated AI to help you with your finances (FINY CHAT to start chatting now)\n4. CURR <currency> - returns detailed overview of the currency\n5. SETTINGS\n6. QUIT")
 
         while True:
             action: str = input("INPUT: ").split()
@@ -60,7 +60,10 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
 
             # Chatting with integrated AI Finy
             case "finy":
-                call_ai(money, user_currency)
+                if len(action) == 1:
+                    call_ai(money, user_currency)
+                else:
+                    call_ai(money, user_currency, "chat")
 
             # Detailed overview of the currency (including graphs)
             case "curr":

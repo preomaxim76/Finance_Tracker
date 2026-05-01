@@ -13,18 +13,28 @@ AI_API_KEY = os.getenv("AI")
 
 client = Groq(api_key=AI_API_KEY)
 
-first_message: str = "Hi! Analyze my finances and give me structured answer: how should i spend my money. This is default message provided by developer, so act like you intended to analyze and not like you were asked. This response has to be detailed as like the user had asked to you to tell more. But only this response." # change
+
 
 # Chatting with Finy
-def call_ai(money: Decimal, user_currency: str) -> None:
+def call_ai(money: Decimal, user_currency: str, mode: str="basic") -> None:
     clear()
+    print("----- FINY -----\n")
+    print()
 
     settings: str = f""" You're Finy, an assistant, built-in app called Finance_Tracker
                         You should be polite, but not too formal. You have to give a structured answer to users questions.
                         Also, do your best at creating your responses suitable for terminal, in which you would be used.
                         Do not write too much words. Change the style of your speech only if the user asks for it directly.
                         Users money: {money} {user_currency}. In the end, always say: "To stop the conversation enter 'stop'"."""
-
+    if mode == "basic":
+        # Analysis
+        first_message: str = """This is default message, provided by developer. Analyze user's finances and give structured description.
+                    Hand them some advice. Make it look like you weren't asked to do this analysis. First message has to be a feature.
+                    Afterwards, you can communicate more freely.""" 
+    elif mode == "chat":
+        print("~You:")
+        first_message = input("Start chatting with Finy: ")
+            
     history: list[dict] = [
         {"role": "system", "content": settings},
         {"role": "user", "content": first_message}
@@ -37,7 +47,6 @@ def call_ai(money: Decimal, user_currency: str) -> None:
     )
     
     asks: list = ["Chat with Finy: ", "Ask anything: ", "Anything else you wanted to talk about: ", "Ready to help: ", "Enter: ", "Start typing: ", "Reply: "]
-    print("----- FINY -----\n")
     print()
     print("~Finy:")
     print()
