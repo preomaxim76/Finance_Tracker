@@ -67,7 +67,7 @@ def change_currency(data: dict, first: bool=True) -> dict:
 
 # Sign in -> data, nickname, password
 def sign_up() -> tuple[dict, str, str]:
-    #converting_currencies: list = ["USD", "RUB", "EUR", "GBP", "CHY", "CAD", "AUD", "JPY"] 
+    # converting_currencies: list = ["USD", "RUB", "EUR", "GBP", "CHY", "CAD", "AUD", "JPY"] 
 
     users_data = open_file()
 

@@ -71,12 +71,9 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
 
             case "settings":
                 call = settings(user_data, nickname, password)
+                # Delete
                 if call == {}:
-                    users = open_file()
-                    del users[nickname]
-                    with open("Python/TProjects/Finance_Tracker/users_finances.json", "w") as f:
-                        dump(users, f)
-
+                    delete_user(nickname)
                     python = sys.executable
                     os.execl(python, python, *sys.argv)
 

@@ -1,24 +1,61 @@
-from json import load, dump
+import sqlite3
+import json
+from time import sleep
 
-# Opens users_finances.json
 def open_file() -> dict:
-    with open("Python/TProjects/Finance_Tracker/users_finances.json", "r", encoding="utf-8") as json_file:
-        dct: dict = load(json_file)
-    return dct
-
-# Saves user data -> users_finances.json
-def save_file(data: dict, user_name: str) -> None:
-    stored_data: dict = open_file()
-    if user_name in stored_data:
-        del stored_data[user_name]
+    conn = sqlite3.connect("Python/TProjects/Finance_Tracker/database.db")
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+              username TEXT UNIQUE,
+              password BLOB, 
+              money REAL,
+              user_currency TEXT,
+              other_currencies TEXT)""")
     
-    with open("Python/TProjects/Finance_Tracker/users_finances.json", mode="w", encoding="utf-8") as f:
-        data = {user_name: data}
-        data.update(stored_data)
-        dump(data, f)
+    c.execute("SELECT * FROM users")
+    data = {row["username"]: {key: value for key, value in dict(row).items() if key != row["username"]} for row in c.fetchall()}
+    for key in data:
+        data[key]["other_currencies"] = json.loads(data[key]["other_currencies"])
+    
+    conn.commit()
+    conn.close()
 
-def delete_user(user_name: str) -> None:
+    return data
+
+
+def save_file(data: dict, user_name: str) -> None:
+    conn = sqlite3.connect("Python/TProjects/Finance_Tracker/database.db")
+    c = conn.cursor()
+    c.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+              username TEXT UNIQUE,
+              password BLOB, 
+              money REAL,
+              user_currency TEXT,
+              other_currencies TEXT)""")
     stored_data: dict = open_file()
-    del stored_data[user_name]
-    with open("Python/TProjects/Finance_Tracker/users_finances.json", mode="w", encoding="utf-8") as f:
-        dump(stored_data, f)
+
+    if user_name in stored_data:
+        c.execute("DELETE FROM users WHERE username = ?", (user_name,))
+    
+    password = data["password"]
+    money = data["money"]
+    user_currency = data["user_currency"]
+    other_currencies = json.dumps(data["other_currencies"])
+    c.execute("INSERT INTO users (username, password, money, user_currency, other_currencies) VALUES (?, ?, ?, ?, ?)", (user_name, password, money, user_currency, other_currencies))
+    
+    conn.commit()
+    conn.close()
+
+    return
+def delete_user(user_name: str) -> None:
+    conn = sqlite3.connect("Python/TProjects/Finance_Tracker/database.db")
+    c = conn.cursor()
+    c.execute("DELETE FROM users WHERE username = ?", (user_name,))
+
+    conn.commit()
+    conn.close()
+
+    return
