@@ -18,7 +18,6 @@ def main() -> None:
     else:
         user_data = open_file()[nickname]
 
-
     clear()
     print(greeting(nickname))
     sleep(2)

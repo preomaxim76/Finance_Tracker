@@ -65,7 +65,7 @@ def change_currency(data: dict, first: bool=True) -> dict:
             print("Error occurred, while sending request (for developer):",  st_code)
     return data
 
-# Sign in -> data, nickname, password
+# Sign up -> data, nickname, password
 def sign_up() -> tuple[dict, str, str]:
     # converting_currencies: list = ["USD", "RUB", "EUR", "GBP", "CHY", "CAD", "AUD", "JPY"] 
 

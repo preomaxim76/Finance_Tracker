@@ -3,6 +3,7 @@ from decimal import Decimal
 from time import sleep
 from storage import save_file
 import plotly.express as px
+from ai import call_ai
 from dotenv import load_dotenv
 import os
 
@@ -71,6 +72,77 @@ def delete(nickname: str, user_data: dict, money: Decimal = Decimal("0")) -> Dec
     
     return money
 
+# Updating users finances (total amount of money)
+def update():
+    pass
+
+# Updating users monthly income
+def income():
+    pass
+
+# Setting a goal
+def goal() -> str:
+    settings: str = """
+                    You need to make users goal shorter and more readable.
+                    It should be like a short sentence. Example: "I want to save $1000 for mac".
+                    You should not give any advices.
+                    You should only write goal and thats it. No questions and anything".
+                    If user asks you to change sth - you do.
+                    Always write full sentences! Never add anything from yourself."""
+
+    clear()
+    print("Create your goal. Try to be short and consistent. \nTo quit - 'QUIT'. 'SET GOAL' - to set current goal.\n")
+    users_goal = input("INPUT: ")
+    if users_goal.lower().strip() == "quit":
+        return
+
+    history: list[dict] = [
+        {"role": "system", "content": settings},
+        {"role": "user", "content": users_goal}
+    ]
+
+    
+    while True:
+        print()
+        print("~Finy:")
+
+        full_response = ""
+        for chunk in call_ai(history):
+            print(chunk, end="", flush=True)
+            sleep(0.05)
+            full_response = full_response + chunk
+        print()
+
+        history.append({"role": "assistant", "content": full_response})
+
+        print()
+        print()
+        print("SET <goal> to set <goal> as your goal.")
+        user_message = input("INPUT: ")
+        um = user_message.lower().strip()
+
+        if um == "quit":
+            return
+        if um == "set goal":
+            clear()
+            print("Your goal has been successfully changed!")
+            sleep(1.5)
+            return full_response
+        elif um.startswith("set"):
+            print("Your goal has been successfully changed!")
+            sleep(1.5)
+            return " ".join(um.split()[1:])
+        
+        history.append({"role": "user", "content": user_message})
+        
+        
+        
+    
+
+
 # Detailed overview of the currency, including graphs
 def overview() -> None:
     pass
+
+
+
