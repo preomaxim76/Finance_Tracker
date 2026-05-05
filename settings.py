@@ -1,36 +1,11 @@
 from utils import clear
 from time import sleep
 from copy import deepcopy
-from auth import change_currency
+from auth import change_currency, change_nickname
 from storage import open_file
 
 
 # Settings functions:
-
-def change_nickname(to_return: dict, users_data: dict, nickname: str) -> dict:
-    old_nickname = nickname
-    while True:
-        username = input("Please enter your new username: ")
-        if username == nickname:
-            print("This is your last saved nickname.")
-            print("Do you want to keep it?")
-            answer = input("Enter: ")
-            if answer.strip().lower() in ["yes", "y"]:
-                print("Your nickname has not been changed.")
-                sleep(2)
-                return to_return
-        elif username in users_data:
-            print("Unfortunately, this nickname already exists. Try another one.")
-            continue
-        else:
-            nickname = username
-            to_return["nickname"] = nickname
-            to_return["old_nickname"] = old_nickname
-            print(f"You have successfully changed your nickname from {old_nickname} to {nickname}.")
-
-            sleep(2)
-            return to_return
-
 
 def change_password(password: str) -> tuple[str, bool]:
     clear()
@@ -110,8 +85,14 @@ def settings(user_data: dict, nickname: str, password: str) -> dict:
                 answer = input("Enter: ").strip().lower()
 
                 if answer in ("y", "yes"):
-                    to_return = change_nickname(to_return, users_data, nickname)
-                    nickname = to_return["nickname"]
+                    old_nickname = nickname
+                    nickname = change_nickname(users_data, mode="settings")
+
+                    to_return["nickname"] = nickname
+                    to_return["old_nickname"] = old_nickname
+                    clear()
+                    print("Your username has been successfully changed!")
+                    sleep(1.5)
                 else:
                     continue
                     

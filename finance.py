@@ -1,5 +1,5 @@
 from utils import clear
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from time import sleep
 from storage import save_file
 import plotly.express as px
@@ -77,8 +77,38 @@ def update():
     pass
 
 # Updating users monthly income
-def income():
-    pass
+def income(currency: str, old_salary: Decimal) -> Decimal:
+    clear()
+    print("Set Monthly Salary")
+    print()
+    print(f"Enter your salary in {currency} ('quit' - to quit).")
+    while True:
+        user_input = input("INPUT: ")
+        if user_input.lower().strip() == "quit":
+            return old_salary
+        try:
+            salary = Decimal(user_input)
+            if old_salary != "N/A":
+                clear()
+                print(f"Are you sure you want to change your salary?\n{old_salary} -> {salary}\n")
+                while True:
+                    ask = input("INPUT: ").strip().lower()
+                    if ask in ["yes", "y"]:
+                        break
+                    elif ask in ["no", "n"]:
+                        print("Your salary has not been changed...")
+                        sleep(1.5)
+                        return old_salary
+                    else:
+                        print("Error: please enter 'yes' or 'no'.")
+            print(f"Your income has been successfully set as {salary} {currency}.")
+            sleep(1.5)
+            return salary
+            
+
+        except InvalidOperation:
+            print(f"Error: {user_input} is not a number.")
+
 
 # Setting a goal
 def goal() -> str:
@@ -88,7 +118,10 @@ def goal() -> str:
                     You should not give any advices.
                     You should only write goal and thats it. No questions and anything".
                     If user asks you to change sth - you do.
-                    Always write full sentences! Never add anything from yourself."""
+                    Always write full sentences! Never add anything from yourself.
+                    If user writes something strange, like 'hey' just print out 'N/A'.
+                    If user doesn't complete his sentence, do not try to invent something, just print out the data you have:
+                    example: i want -> you answer with: 'I want <something>."""
 
     clear()
     print("Create your goal. Try to be short and consistent. \nTo quit - 'QUIT'. 'SET GOAL' - to set current goal.\n")

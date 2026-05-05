@@ -1,9 +1,8 @@
 import sqlite3
 import json
-from time import sleep
 
 def open_file() -> dict:
-    conn = sqlite3.connect("Python/TProjects/Finance_Tracker/database.db")
+    conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     c.execute("""
@@ -28,7 +27,7 @@ def open_file() -> dict:
 
 
 def save_file(data: dict, user_name: str) -> None:
-    conn = sqlite3.connect("Python/TProjects/Finance_Tracker/database.db")
+    conn = sqlite3.connect("database.db")
     c = conn.cursor()
     c.execute("""
             CREATE TABLE IF NOT EXISTS users (
@@ -57,7 +56,7 @@ def save_file(data: dict, user_name: str) -> None:
 
     return
 def delete_user(user_name: str) -> None:
-    conn = sqlite3.connect("Python/TProjects/Finance_Tracker/database.db")
+    conn = sqlite3.connect("database.db")
     c = conn.cursor()
     c.execute("DELETE FROM users WHERE username = ?", (user_name,))
 

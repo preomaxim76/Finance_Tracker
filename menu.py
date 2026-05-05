@@ -2,7 +2,7 @@ from utils import clear
 from decimal import Decimal
 from time import sleep
 from storage import save_file, open_file, delete_user
-from finance import add, delete, goal
+from finance import add, delete, goal, income
 from json import dump
 from settings import settings
 from ai import call_finy
@@ -21,7 +21,7 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
     # Users total money
     money: Decimal = Decimal(user_data["money"])
     user_currency = user_data["user_currency"]
-    income = user_data["income"]
+    salary = user_data["income"]
     user_goal = user_data["goal"]
 
     while True:
@@ -29,7 +29,7 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
         print("---HOME---")
         print(f"Total Money: {round(money, 3)} {user_currency}")
         print(f"Current Goal: {'N/A' if not user_goal else user_goal}")
-        print(f"Total Income: {'N/A' if not income else income} {user_currency}")
+        print(f"Total Income: {'N/A' if not salary else salary} {user_currency}")
         print()
         print("Main Currencies:")
         print()
@@ -73,8 +73,13 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
                             pass
 
                         case "income":
-                            pass
-                        
+                            old = salary
+                            salary = income(currency=user_currency, old_salary=old)
+                            if salary:
+                                user_data["income"] = float(salary) if salary != "N/A" else old
+                                save_file(user_data, nickname)
+
+                        # Financial Goal
                         case "goal":
                             user_g = goal()
                             # Not return
@@ -130,8 +135,7 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
                         hashed = bcrypt.hashpw(byte_password, bcrypt.gensalt())
                         user_data["password"] = str(hashed)
 
-                    
-                    if "old_nickname" in call:
+                    if nickname != call["nickname"]:
                         nickname = call["nickname"]
                         delete_user(call["old_nickname"])
 

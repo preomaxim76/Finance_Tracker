@@ -12,17 +12,34 @@ AI_API_KEY = os.getenv("AI")
 client = Groq(api_key=AI_API_KEY)
 
 # Calling ai
-def call_ai(history: list[dict]):
+def call_ai(history: list[dict], mode="char"):
+
     response = client.chat.completions.create(
         model="llama-3.1-8b-instant",
         messages=history,
         stream=True
     )
-
-    for chunk in response:
-        text = chunk.choices[0].delta.content
-        if text:
-            yield text
+    if mode == "char":
+        for chunk in response:
+            text = chunk.choices[0].delta.content
+            if text:
+                yield text
+    elif mode == "word":
+        text = ""
+        for chunk in response:
+            t = chunk.choices[0].delta.content
+            if not t:
+                continue
+            if t == ',':
+                yield text
+                text = ""
+            elif "," in t:
+                text = text + t[:t.find(",")]
+                yield text
+                text = t[t.find(",")+1:]
+            else:
+                text = text + t 
+    
 
 def call_finy(money: Decimal, user_currency: str, income: Decimal="N/A", goal: str="N/A", mode: str="basic") -> None:
     clear()
@@ -38,7 +55,7 @@ def call_finy(money: Decimal, user_currency: str, income: Decimal="N/A", goal: s
                         Users money: {money} {user_currency}. Their monthly income: {income}. Their current goal: {goal}.
                         Never suggest to set anything since you can't change their settings (goals, income, money, currency).
                         Never make anything up.
-                        In the end, always say: "To stop the conversation enter 'stop'"."""
+                        In the end, always say: "To stop the conversation enter 'quit'"."""
     # Analysis first, then chatting
     if mode == "basic":
         first_message: str = """This is default message, provided by developer. Analyze user's finances and give structured description.
@@ -70,7 +87,7 @@ def call_finy(money: Decimal, user_currency: str, income: Decimal="N/A", goal: s
         ask = choice(asks)
         user_message = input(ask)
 
-        if user_message.lower().strip() == "stop":
+        if user_message.lower().strip() == "quit":
             break
 
         history.append({"role": "user", "content": user_message})

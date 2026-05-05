@@ -5,6 +5,9 @@ from utils import clear
 from requests import get
 from dotenv import load_dotenv
 import os
+import sys
+from json import decoder
+from ai import call_ai
 
 load_dotenv()
 
@@ -15,12 +18,27 @@ API_KEY = os.getenv("CURRENT_CURRENCY_VALUE_API")
 
 # nickname if the user has an account, "" otherwise
 def authorization() -> tuple[str, str]: 
-    print("Type in your nickname and password if you have an account and 'sign up' if you don't.")
+    print("Type in your nickname and password if you have an account and 'sign up' if you don't.\nTo quit - 'quit'")
     
     while True:
         inpt = input("INPUT: ")
+        if inpt.lower().strip() == "quit":
+
+            clear()
+            print("Are you sure you want to exit the program?")
+            while True:
+                ask = input("INPUT: ").lower().strip()
+                if ask in ["y", "yes"]:
+                    sys.exit()
+                elif ask in ["n", "no"]:
+                    python = sys.executable
+                    os.execl(python, python, *sys.argv)
+
+
+                print("Error: please enter 'yes' or 'no'...")
         if inpt.lower().strip() == "sign up":
             return "", ""
+        
         if len(inpt.split()) == 2:
             nn, password = inpt.split()
             dct = open_file()
@@ -47,7 +65,7 @@ def change_currency(data: dict, first: bool=True) -> dict:
         r = get(f"https://v6.exchangerate-api.com/v6/{API_KEY}/latest/{currency}")
         try:
             dct = r.json()["conversion_rates"]
-        except KeyError:
+        except decoder.JSONDecodeError:
             print(f"Error: We couldn't find {currency} currency. Please enter a valid currency.")
             continue
         st_code = r.status_code
@@ -65,10 +83,86 @@ def change_currency(data: dict, first: bool=True) -> dict:
             print("Error occurred, while sending request (for developer):",  st_code)
     return data
 
+def generate_usernames(example: str) -> dict:
+    bad_usernames = open_file().keys()
+    
+    settings = f"""
+                Generate exactly 4 usernames similar in style to: {example}.
+
+                Rules:
+                - Output ONLY 4 usernames (no explanations, no extra text)
+                - Format: username1,username2,username3,username4,username5
+                - No spaces anywhere
+                - Use only lowercase letters and numbers
+                - Keep them visually clean and modern
+                - You may slightly modify the base name or add short suffixes/prefixes (numbers or short words)
+                - Avoid special characters
+                - Each username must be unique
+                - Do NOT include any of these: {bad_usernames}
+
+                Make the usernames look natural and realistic (like real users would pick them).
+"""
+    
+    history: list[dict] = [
+        {"role": "system", "content": settings}
+    ]
+    usernames = {count: un.strip().lower() for count in range(1, 5) for un in list(call_ai(history, mode="word"))}
+    return usernames
+
+    
+def change_nickname(users_data: dict, mode: str="signup") -> str:
+    while True:
+        username = input("Please create your username: ")
+        if username in users_data:
+            print("Unfortunately, this nickname already exists. Try another one.")
+            continue
+        if " " in username:
+            clear()
+            ready_username = username.replace(" ", "_")
+            print(f"Your username: {username} has space, which is invalid for a nickname.")
+            print(f"Is it okay that your username would be changed: {username} -> {ready_username}?")
+            while True:
+                answer = input("INPUT: ").lower().strip()
+                if answer in ["y", "yes"]:
+                    clear()
+                    print(f"Your username: {ready_username}.")
+                    sleep(1.5)
+                    username = ready_username
+                    clear()
+                    break
+                else:
+                    clear()
+                    print("Then we would like to suggest these usernames: ")
+                    usernames = generate_usernames(username)
+
+                    for key, username in usernames.items():
+                        print(f"{key}. {username}")
+                    print()
+                    length = len(usernames)
+                    
+                    while True:
+                        inpt = input(f"Please enter a number (1:{length}) or 'quit' to choose your own: ").lower().strip()
+                        if inpt.isdigit() and 1 <= int(inpt) <= length:
+                            break
+                        if inpt == "quit" and mode == "signup":
+                            python = sys.executable
+                            os.execl(python, python, *sys.argv)
+                        if inpt == "quit" and mode == "settings":
+                            break
+                        else:
+                            print(f"Error: please enter 'quit' or digit 1 - {length} (inc.)")
+                    if inpt == "quit":
+                        clear()
+                        continue
+                    username = usernames[int(inpt)]
+                    clear()
+                    print(f"Your username {username} has been successfully set!")
+                    sleep(1.5)
+                    break
+        return username      
+
 # Sign up -> data, nickname, password
 def sign_up() -> tuple[dict, str, str]:
-    # converting_currencies: list = ["USD", "RUB", "EUR", "GBP", "CHY", "CAD", "AUD", "JPY"] 
-
     users_data = open_file()
 
     # New user data
@@ -77,12 +171,8 @@ def sign_up() -> tuple[dict, str, str]:
 
     clear()
     print("Create an account.")
-    while True:
-        username = input("Please create your username: ")
-        if username in users_data:
-            print("Unfortunately, this nickname already exists. Try another one.")
-            continue
-        break
+    
+    username = change_nickname(users_data)
 
     password: str = input("Create your password: ").strip()
 
@@ -92,9 +182,12 @@ def sign_up() -> tuple[dict, str, str]:
     hashed = bcrypt.hashpw(byte_password, bcrypt.gensalt())
     
     data["password"] = str(hashed)
+    data["goal"] = "N/A"
+    data["income"] = "N/A"
     
     # Adding currency
     data = change_currency(data)
+
 
     # Saving data of our user to file users_finances.json
     save_file(data=data, user_name=username)
