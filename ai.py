@@ -83,6 +83,7 @@ def call_finy(money: Decimal, user_currency: str, income: Decimal="N/A", goal: s
     
     while True:
         print()
+        print()
         print("~You:")
         ask = choice(asks)
         user_message = input(ask)

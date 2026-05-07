@@ -1,8 +1,8 @@
 from utils import clear
 from decimal import Decimal
 from time import sleep
-from storage import save_file, open_file, delete_user
-from finance import add, delete, goal, income
+from storage import update_file, open_file, delete_user
+from finance import goal, income
 from json import dump
 from settings import settings
 from ai import call_finy
@@ -16,7 +16,7 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
     clear()
 
     # Available functions
-    available: list = ["finance", "add", "del", "finy", "curr", "settings", "quit", "finy chat"]
+    available: list = ["finance", "finy", "curr", "settings", "quit", "finy chat"]
 
     # Users total money
     money: Decimal = Decimal(user_data["money"])
@@ -77,7 +77,7 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
                             salary = income(currency=user_currency, old_salary=old)
                             if salary:
                                 user_data["income"] = float(salary) if salary != "N/A" else old
-                                save_file(user_data, nickname)
+                                update_file(user_data, nickname, file_name="clients.db", table_name="users")
 
                         # Financial Goal
                         case "goal":
@@ -86,28 +86,19 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
                             if user_g:
                                 user_goal = user_g
                                 user_data["goal"] = user_goal
-                                save_file(user_data, nickname)
+                                update_file(user_data, nickname, file_name="clients.db", table_name="users")
 
 
                         case "quit":
                             break
 
 
-
-            # Add money
-            case "add":
-                money = add(nickname=nickname, user_data=user_data, money=money)
-
-            # Delete money
-            case "del":
-                money = delete(nickname=nickname, user_data=user_data, money=money)
-
             # Chatting with integrated AI Finy
             case "finy":
                 if len(action) == 1:
-                    call_finy(money, user_currency)
+                    call_finy(money, user_currency, salary, user_goal)
                 else:
-                    call_finy(money, user_currency, mode="chat")
+                    call_finy(money, user_currency, salary, user_goal, mode="chat")
 
             # Detailed overview of the currency (including graphs)
             case "curr":
@@ -136,12 +127,16 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
                         user_data["password"] = str(hashed)
 
                     if nickname != call["nickname"]:
+                        old_nickname = nickname
                         nickname = call["nickname"]
-                        delete_user(call["old_nickname"])
+                    else:
+                        old_nickname = None
+                        
 
 
 
-                    save_file(user_data, nickname)
+
+                    update_file(user_data, nickname, file_name="clients.db", table_name="users", old_username=old_nickname)
 
 
 

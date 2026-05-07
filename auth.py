@@ -41,7 +41,7 @@ def authorization() -> tuple[str, str]:
         
         if len(inpt.split()) == 2:
             nn, password = inpt.split()
-            dct = open_file()
+            dct = open_file(file_name="clients.db", table_name="users")
 
             if nn in dct and bcrypt.checkpw(password.encode(), dct[nn]["password"][2:-1].encode()):
                 return nn, password
@@ -65,7 +65,7 @@ def change_currency(data: dict, first: bool=True) -> dict:
         r = get(f"https://v6.exchangerate-api.com/v6/{API_KEY}/latest/{currency}")
         try:
             dct = r.json()["conversion_rates"]
-        except decoder.JSONDecodeError:
+        except (decoder.JSONDecodeError, KeyError):
             print(f"Error: We couldn't find {currency} currency. Please enter a valid currency.")
             continue
         st_code = r.status_code
@@ -84,7 +84,7 @@ def change_currency(data: dict, first: bool=True) -> dict:
     return data
 
 def generate_usernames(example: str) -> dict:
-    bad_usernames = open_file().keys()
+    bad_usernames = open_file(file_name="clients.db", table_name="users").keys()
     
     settings = f"""
                 Generate exactly 4 usernames similar in style to: {example}.
@@ -106,20 +106,45 @@ def generate_usernames(example: str) -> dict:
     history: list[dict] = [
         {"role": "system", "content": settings}
     ]
-    usernames = {count: un.strip().lower() for count in range(1, 5) for un in list(call_ai(history, mode="word"))}
+    usernames = {count: un.strip().lower() for count in range(1, 5) for un in list(call_ai(history, mode="word")) if un.lower().strip() not in bad_usernames}
     return usernames
 
     
-def change_nickname(users_data: dict, mode: str="signup") -> str:
+def change_nickname(users_data: dict) -> str:
+    flag = True
     while True:
         username = input("Please create your username: ")
         if username in users_data:
-            print("Unfortunately, this nickname already exists. Try another one.")
-            continue
+            print("Unfortunately, this nickname already exists. \nSuggestions:\n")
+            usernames = generate_usernames(example=username)
+            for key, username in usernames.items():
+                print(f"{key}. {username}")
+            print()
+            length = len(usernames)
+            while True:
+                inpt = input("Please enter a number or 'quit' to choose your own: ").lower().strip()
+                if inpt == "quit":
+                    break
+                if 1 <= int(inpt) <= length:
+                    break
+                username = usernames[int(inpt)]
+                clear()
+                print(f"Your username {username} has been successfully set!")
+                sleep(1.5)
+                return username
+            if inpt == "quit":
+                clear()
+                continue
+            username = usernames[int(inpt)]
+            clear()
+            print(f"Your username {username} has been successfully set!")
+            sleep(1.5)
+            return username
+
         if " " in username:
             clear()
             ready_username = username.replace(" ", "_")
-            print(f"Your username: {username} has space, which is invalid for a nickname.")
+            print(f"Your username: '{username}' has spaces, which is invalid for a nickname.")
             print(f"Is it okay that your username would be changed: {username} -> {ready_username}?")
             while True:
                 answer = input("INPUT: ").lower().strip()
@@ -129,41 +154,49 @@ def change_nickname(users_data: dict, mode: str="signup") -> str:
                     sleep(1.5)
                     username = ready_username
                     clear()
+                    return username 
+                elif answer in ["n", "no"]:
+                    flag = False
                     break
-                else:
-                    clear()
-                    print("Then we would like to suggest these usernames: ")
-                    usernames = generate_usernames(username)
+        
+            if flag == False:
+                clear()
+                print("Then we would like to suggest these usernames: ")
+                usernames = generate_usernames(username)
 
-                    for key, username in usernames.items():
-                        print(f"{key}. {username}")
-                    print()
-                    length = len(usernames)
-                    
-                    while True:
-                        inpt = input(f"Please enter a number (1:{length}) or 'quit' to choose your own: ").lower().strip()
-                        if inpt.isdigit() and 1 <= int(inpt) <= length:
-                            break
-                        if inpt == "quit" and mode == "signup":
-                            python = sys.executable
-                            os.execl(python, python, *sys.argv)
-                        if inpt == "quit" and mode == "settings":
-                            break
-                        else:
-                            print(f"Error: please enter 'quit' or digit 1 - {length} (inc.)")
+                for key, username in usernames.items():
+                    print(f"{key}. {username}")
+                print()
+                length = len(usernames)
+                
+                while True:
+                    inpt = input(f"Please enter a number (1:{length}) or 'quit' to choose your own: ").lower().strip()
+
+
+                    if inpt.isdigit() and 1 <= int(inpt) <= length:
+                        break
+
                     if inpt == "quit":
-                        clear()
-                        continue
-                    username = usernames[int(inpt)]
+                        break
+
+                    else:
+                        print(f"Error: please enter 'quit' or digit 1 - {length} (inc.)")
+
+                if inpt == "quit":
                     clear()
-                    print(f"Your username {username} has been successfully set!")
-                    sleep(1.5)
-                    break
-        return username      
+                    continue
+
+                username = usernames[int(inpt)]
+                clear()
+                print(f"Your username {username} has been successfully set!")
+                sleep(1.5)
+                return username
+        return username
+             
 
 # Sign up -> data, nickname, password
 def sign_up() -> tuple[dict, str, str]:
-    users_data = open_file()
+    users_data = open_file(file_name="clients.db", table_name="users")
 
     # New user data
     data: dict = {}
@@ -183,14 +216,14 @@ def sign_up() -> tuple[dict, str, str]:
     
     data["password"] = str(hashed)
     data["goal"] = "N/A"
-    data["income"] = "N/A"
+    data["income"] = 0.0
     
     # Adding currency
     data = change_currency(data)
 
 
     # Saving data of our user to file users_finances.json
-    save_file(data=data, user_name=username)
+    save_file(data=data, user_name=username, file_name="clients.db", table_name="users")
 
     print("You have successfully registered!")
     sleep(2)

@@ -40,7 +40,7 @@ def rate_app(nickname: str):
 
 # Settings: currency, password, nickname, delete account
 def settings(user_data: dict, nickname: str, password: str) -> dict:
-    users_data: dict = open_file()
+    users_data: dict = open_file(file_name="clients.db", table_name="users")
     to_return = deepcopy(user_data)
     view = False
     var = "view"
@@ -86,7 +86,7 @@ def settings(user_data: dict, nickname: str, password: str) -> dict:
 
                 if answer in ("y", "yes"):
                     old_nickname = nickname
-                    nickname = change_nickname(users_data, mode="settings")
+                    nickname = change_nickname(users_data)
 
                     to_return["nickname"] = nickname
                     to_return["old_nickname"] = old_nickname
@@ -145,8 +145,11 @@ def settings(user_data: dict, nickname: str, password: str) -> dict:
                 if password[1]: # Password was changed
                     to_return["password"] = password[0]
                     to_return["password_is_changed"] = True
+                    print("Your password has been successfully changed.")
+                else:
+                    print("Your password has not been changed.")
                 password = password[0]
-                print("Your password has been successfully changed.")
+                
                 sleep(2)
                 continue
 

@@ -16,7 +16,7 @@ def main() -> None:
     if nickname == "": # The user does not have an account
         user_data, nickname, password = sign_up()
     else:
-        user_data = open_file()[nickname]
+        user_data = open_file(file_name="clients.db", table_name="users")[nickname]
 
     clear()
     print(greeting(nickname))

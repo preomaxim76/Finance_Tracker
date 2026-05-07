@@ -1,80 +1,53 @@
 from utils import clear
 from decimal import Decimal, InvalidOperation
 from time import sleep
-from storage import save_file
+from storage import update_file
 import plotly.express as px
 from ai import call_ai
 from dotenv import load_dotenv
 import os
+from datetime import datetime
 
 load_dotenv()
 API_KEY = os.getenv("HISTORIC_CURRENCY_VALUE_API")
 
 # Menu functions:
 
-# ADD function
-def add(nickname: str, user_data: dict, money: Decimal) -> Decimal:
-    clear()
-    print(f"Total money: {money}")
-    while True:
-        print("Enter number to add and *number to change the value to the number. (QUIT to quit)")
-
-        total = input("Enter: ")
-        if total.strip() == "":
-            print("Error: please enter a number...")
-            sleep(1.5)
-            continue
-        if total.upper() == "QUIT":
-            break
-        if total[0] == "*":
-            money = 0
-            total = total[1:]
-        try:
-            total = Decimal(total)
-            money += total
-        except:
-            print("Error: please enter a number...")
-            sleep(1.5)
-            continue
-        print("Money added successfully!")
-        sleep(1.5)
-        break
-    # TODO add money to users bank account
-    user_data["money"] = float(money)
-
-    
-    save_file(data=user_data, user_name=nickname)
-
-    return money
-
-# DEL function
-def delete(nickname: str, user_data: dict, money: Decimal = Decimal("0")) -> Decimal:
-    clear()
-    print(f"Total money: {money}")
-    print("Enter number to delete that amount of money from you bank account. Enter 'quit' to quit.\n")
-    
-    while True:
-        number = input("Enter: ")
-        if number.lower() == "quit":
-            break
-        elif number.isnumeric():
-            number = Decimal(number)
-            money -= number
-            user_data["money"] = float(money)
-
-            save_file(data=user_data, user_name=nickname)
-            print("Success!")
-            sleep(1)
-            break
-        else:
-            print("Please enter a number...")
-            continue
-    
-    return money
-
 # Updating users finances (total amount of money)
-def update():
-    pass
+def update(total: Decimal, username: str) -> Decimal:
+    clear()
+    print("FINANCE UPDATING")
+    print("Please enter +'number' or -'number' to add or delete money from your total amount.\nTo exit - 'quit'.\n")
+    while True:
+        command = input("INPUT: ").lower().strip()
+        if command == "quit":
+            return total
+        
+        start = command[0]
+
+        try:
+            money = float(command[1:].strip())
+        except TypeError:
+            print("Error: please enter +/- and a valid number...")
+            continue
+
+        if start == "+":
+            total += money
+
+        elif start == "-":
+            total -= money
+
+        t = datetime.now()
+        description = input("Note: ")
+
+        update_file(
+            data={"username": username, "money_transaction": total, "way": start, "datetime": t, "description": description},
+            user_name=username, 
+            file_name="transactions.db",
+            table_name="transactions"
+        )
+
+
 
 # Updating users monthly income
 def income(currency: str, old_salary: Decimal) -> Decimal:
@@ -88,7 +61,7 @@ def income(currency: str, old_salary: Decimal) -> Decimal:
             return old_salary
         try:
             salary = Decimal(user_input)
-            if old_salary != "N/A":
+            if old_salary != 0.0:
                 clear()
                 print(f"Are you sure you want to change your salary?\n{old_salary} -> {salary}\n")
                 while True:
@@ -101,6 +74,7 @@ def income(currency: str, old_salary: Decimal) -> Decimal:
                         return old_salary
                     else:
                         print("Error: please enter 'yes' or 'no'.")
+            clear()
             print(f"Your income has been successfully set as {salary} {currency}.")
             sleep(1.5)
             return salary
@@ -124,10 +98,17 @@ def goal() -> str:
                     example: i want -> you answer with: 'I want <something>."""
 
     clear()
-    print("Create your goal. Try to be short and consistent. \nTo quit - 'QUIT'. 'SET GOAL' - to set current goal.\n")
-    users_goal = input("INPUT: ")
-    if users_goal.lower().strip() == "quit":
+    print("Create Your Goal\n\nSET <goal> to set <goal> as your goal.\n<goal> - to see AI's suggestion\nTo quit - 'QUIT'. \n")
+    users_goal = input("INPUT: ").strip()
+    if users_goal.lower() == "quit":
         return
+    
+    # User wants to set their goal manually
+    if users_goal.lower().startswith("set"):
+        clear()
+        print("Your goal has been successfully changed!")
+        sleep(1.5)
+        return users_goal[3:].strip()
 
     history: list[dict] = [
         {"role": "system", "content": settings},
@@ -144,13 +125,12 @@ def goal() -> str:
             print(chunk, end="", flush=True)
             sleep(0.05)
             full_response = full_response + chunk
-        print()
 
         history.append({"role": "assistant", "content": full_response})
 
         print()
         print()
-        print("SET <goal> to set <goal> as your goal.")
+        print("'SET GOAL' - to set current goal.")
         user_message = input("INPUT: ")
         um = user_message.lower().strip()
 
