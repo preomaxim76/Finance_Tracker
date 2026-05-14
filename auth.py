@@ -125,7 +125,14 @@ def change_nickname(users_data: dict) -> str:
                 inpt = input("Please enter a number or 'quit' to choose your own: ").lower().strip()
                 if inpt == "quit":
                     break
-                if 1 <= int(inpt) <= length:
+                
+                try:
+                    inpt = int(inpt)
+                except ValueError:
+                    print("Error: please enter 'quit' or a valid number...")
+                    continue
+
+                if 1 <= inpt <= length:
                     break
                 username = usernames[int(inpt)]
                 clear()

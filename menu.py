@@ -2,13 +2,14 @@ from utils import clear
 from decimal import Decimal
 from time import sleep
 from storage import update_file, open_file, delete_user
-from finance import goal, income
+from finance import goal, income, update
 from json import dump
 from settings import settings
 from ai import call_finy
 import sys
 import os
 import bcrypt
+import sqlite3
 
 
 # Menu
@@ -21,7 +22,7 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
     # Users total money
     money: Decimal = Decimal(user_data["money"])
     user_currency = user_data["user_currency"]
-    salary = user_data["income"]
+    salary = Decimal(user_data["income"])
     user_goal = user_data["goal"]
 
     while True:
@@ -68,9 +69,13 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
                         else:
                             print(f"Error: function {act} is not found...")
                             sleep(0.1)
+
                     match act:
                         case "update":
-                            pass
+                            money = update(money, nickname, total_income=salary)
+                            
+                            user_data["money"] = float(money)
+                            update_file(user_data, nickname, file_name="clients.db", table_name="users")
 
                         case "income":
                             old = salary

@@ -14,34 +14,51 @@ API_KEY = os.getenv("HISTORIC_CURRENCY_VALUE_API")
 # Menu functions:
 
 # Updating users finances (total amount of money)
-def update(total: Decimal, username: str) -> Decimal:
+def update(total: Decimal, username: str, total_income: Decimal) -> Decimal:
     clear()
-    print("FINANCE UPDATING")
-    print("Please enter +'number' or -'number' to add or delete money from your total amount.\nTo exit - 'quit'.\n")
+    print("----MONEY UPDATING----\n")
+    print("Please enter +'number' or -'number' to add or delete money from your total amount.\nTo add your salary enter 'salary'.\nTo exit - 'quit'.\n")
     while True:
         command = input("INPUT: ").lower().strip()
         if command == "quit":
             return total
-        
-        start = command[0]
-
-        try:
-            money = float(command[1:].strip())
-        except TypeError:
+        elif command == "" or command.isspace():
             print("Error: please enter +/- and a valid number...")
             continue
+        elif command == "salary":
+            total += total_income
+            print(f"Successfully added {total_income}!")
+            description = "My Salary"
+            money = total_income
+            start = "+"
+            sleep(1)
 
-        if start == "+":
-            total += money
+            
+        else:
+            start = command[0]
 
-        elif start == "-":
-            total -= money
+            try:
+                money = Decimal(command[1:].strip())
+            except InvalidOperation:
+                print("Error: please enter +/- and a valid number...")
+                continue
+
+            if start == "+":
+                total += money
+
+            elif start == "-":
+                total -= money
+            
+            else:
+                print("Error: please enter +/- as a first character...")
+                continue
+            description = input("Note: ")
 
         t = datetime.now()
-        description = input("Note: ")
+            
 
         update_file(
-            data={"username": username, "money_transaction": total, "way": start, "datetime": t, "description": description},
+            data={"username": username, "money_transaction": money, "way": start, "datetime": t, "description": description},
             user_name=username, 
             file_name="transactions.db",
             table_name="transactions"
@@ -117,7 +134,8 @@ def goal() -> str:
 
     
     while True:
-        print()
+        clear()
+        print("Create Your Goal\n\nSET <goal> to set <goal> as your goal.\n<goal> - to see AI's suggestion\nTo quit - 'QUIT'. \n")
         print("~Finy:")
 
         full_response = ""

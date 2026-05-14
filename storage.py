@@ -1,7 +1,14 @@
 import sqlite3
 import json
-from time import sleep
 
+def get_user_id(username: str) -> str:
+    conn = sqlite3.connect("clients.db")
+    c = conn.cursor()
+
+    c.execute("SELECT userId FROM users WHERE username = ?", (username, ))
+    
+    userid = c.fetchone()[0]
+    return userid
 
 def create_table_if_not_exists(file_name: str, table_name: str) -> None:
     conn = sqlite3.connect(file_name)
@@ -25,8 +32,7 @@ def create_table_if_not_exists(file_name: str, table_name: str) -> None:
         c = conn.cursor()
         c.execute("""
                 CREATE TABLE IF NOT EXISTS transactions (
-                transactionId INTEGER PRIMARY KEY,
-                username TEXT NOT NULL,
+                transaction_id INTEGER,
                 money_transaction REAL NOT NULL,
                 way TEXT NOT NULL,
                 datetime TEXT NOT NULL, 
@@ -82,15 +88,12 @@ def update_file(data: dict, user_name: str, file_name: str, table_name: str, old
 
     conn = sqlite3.connect(file_name)
     c = conn.cursor()
+    if not old_username:
+        user_id = get_user_id(user_name)
+    else:
+        user_id = get_user_id(old_username)
+
     if table_name == "users":
-        if not old_username:
-            c.execute("SELECT userId FROM users WHERE username = ?", (user_name, ))
-        else:
-            c.execute("SELECT userId FROM users WHERE username = ?", (old_username, ))
-
-        user_id = c.fetchone()[0]
-
-
         password = data["password"]
         money = data["money"]
         user_currency = data["user_currency"]
@@ -101,8 +104,14 @@ def update_file(data: dict, user_name: str, file_name: str, table_name: str, old
         c.execute("UPDATE users SET username = ?, password = ?, money = ?, user_currency = ?, other_currencies = ?, goal = ?, income = ? WHERE userId = ?",
                   (user_name, password, money, user_currency, other_currencies, goal, income, user_id))
     
+    # Updating transactions
     elif table_name == "transactions":
-        pass
+        total_money = float(data["money_transaction"])
+        way = data["way"]
+        transaction_datetime = str(data["datetime"])
+        description = data["description"]
+        c.execute("INSERT INTO transactions (transaction_id, money_transaction, way, datetime, description) VALUES (?, ?, ?, ?, ?);", 
+                  (user_id, total_money, way, transaction_datetime, description))
 
 
     conn.commit()
@@ -112,6 +121,15 @@ def update_file(data: dict, user_name: str, file_name: str, table_name: str, old
 
 
 def delete_user(user_name: str) -> None:
+    create_table_if_not_exists("transactions.db", "transactions")
+    conn = sqlite3.connect("transactions.db")
+    c = conn.cursor()
+
+    c.execute("DELETE FROM transactions WHERE transaction_id = ?", (get_user_id(user_name), ))
+
+    conn.commit()
+    conn.close()
+
     conn = sqlite3.connect("clients.db")
     c = conn.cursor()
     c.execute("DELETE FROM users WHERE username = ?", (user_name,))
@@ -119,12 +137,6 @@ def delete_user(user_name: str) -> None:
     conn.commit()
     conn.close()
 
-    create_table_if_not_exists("transactions.db", "transactions")
-    conn = sqlite3.connect("transactions.db")
-    c = conn.cursor()
-    c.execute("DELETE FROM transactions WHERE username = ?", (user_name, ))
-
-    conn.commit()
-    conn.close()
+    
 
     return
