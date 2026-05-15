@@ -3,6 +3,12 @@ from time import sleep
 from copy import deepcopy
 from auth import change_currency, change_nickname
 from storage import open_file
+from requests import get
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+API_KEY = os.getenv("CURRENT_CURRENCY_VALUE_API")
 
 
 # Settings functions:
@@ -40,7 +46,7 @@ def rate_app(nickname: str):
 
 # Settings: currency, password, nickname, delete account
 def settings(user_data: dict, nickname: str, password: str) -> dict:
-    users_data: dict = open_file(file_name="clients.db", table_name="users")
+    users_data: dict = open_file(table_name="users")
     to_return = deepcopy(user_data)
     view = False
     var = "view"
@@ -100,6 +106,7 @@ def settings(user_data: dict, nickname: str, password: str) -> dict:
             case "currency":
                 old_currency = currency
                 to_return = change_currency(to_return, first=False)
+                new_currency = to_return["user_currency"]
                 
                 clear()
                 print("Would you like to change your money amount to match your new currency?")
@@ -107,7 +114,16 @@ def settings(user_data: dict, nickname: str, password: str) -> dict:
                     change_money_value = input("Enter: ")
                     if change_money_value.lower() in ("yes", "y"):
                         clear()
-                        to_return["money"] = to_return["money"] / to_return["other_currencies"][old_currency]
+                        other_currencies = to_return["other_currencies"]
+
+                        if old_currency in other_currencies:
+                            to_return["money"] = to_return["money"] / to_return["other_currencies"][old_currency]
+
+                        else:
+                            r = get(f"https://v6.exchangerate-api.com/v6/{API_KEY}/latest/{new_currency}")
+                            currency_value = r.json()["conversion_rates"][old_currency]
+                            to_return["money"] = to_return["money"] / currency_value
+                            
                         print(f"Currency has been successfully changed from {old_currency} to {to_return['user_currency']}")
                         print(f"Your total money has changed: {round(to_return['money'], 3)} to match your new currency.")
                         sleep(2.5)

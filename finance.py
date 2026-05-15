@@ -60,7 +60,6 @@ def update(total: Decimal, username: str, total_income: Decimal) -> Decimal:
         update_file(
             data={"username": username, "money_transaction": money, "way": start, "datetime": t, "description": description},
             user_name=username, 
-            file_name="transactions.db",
             table_name="transactions"
         )
 

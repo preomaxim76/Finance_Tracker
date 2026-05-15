@@ -1,6 +1,7 @@
 import sqlite3
 import json
 
+# Returns user id; uses username (provided as an argument) to find it;
 def get_user_id(username: str) -> str:
     conn = sqlite3.connect("clients.db")
     c = conn.cursor()
@@ -10,11 +11,13 @@ def get_user_id(username: str) -> str:
     userid = c.fetchone()[0]
     return userid
 
-def create_table_if_not_exists(file_name: str, table_name: str) -> None:
-    conn = sqlite3.connect(file_name)
+# Creates table if not exists; Helps prevent troubles when table was not created in the first place;
+def create_table_if_not_exists(table_name: str) -> None:
+    conn = sqlite3.connect("clients.db")
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     if table_name == "users":
+
         c.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                 userId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,10 +29,9 @@ def create_table_if_not_exists(file_name: str, table_name: str) -> None:
                 income REAL,
                 goal TEXT)
             """)
+        
     elif table_name == "transactions":
-        conn = sqlite3.connect("transactions.db")
-        conn.row_factory = sqlite3.Row
-        c = conn.cursor()
+
         c.execute("""
                 CREATE TABLE IF NOT EXISTS transactions (
                 transaction_id INTEGER,
@@ -45,18 +47,27 @@ def create_table_if_not_exists(file_name: str, table_name: str) -> None:
     return
 
 
-def open_file(file_name: str, table_name: str) -> dict:
-    create_table_if_not_exists(file_name, table_name)
+# Opens file (in reality it opens a database (users/transactions)) and returns its content
+def open_file(table_name: str) -> dict:
+    create_table_if_not_exists("users")
+    create_table_if_not_exists("transactions")
 
-    conn = sqlite3.connect(file_name)
+    conn = sqlite3.connect("clients.db")
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     
-    
-    c.execute(f"SELECT * FROM {table_name}")
-    data = {row["username"]: {key: value for key, value in dict(row).items() if key != row["username"]} for row in c.fetchall()}
-    for key in data:
-        data[key]["other_currencies"] = json.loads(data[key]["other_currencies"])
+    if table_name == "users":
+        c.execute(f"SELECT * FROM users")
+        data = {row["username"]: {key: value for key, value in dict(row).items() if key != row["username"]} for row in c.fetchall()}
+        for key in data:
+            data[key]["other_currencies"] = json.loads(data[key]["other_currencies"])
+
+    elif table_name == "transactions":
+        c.execute("""
+                SELECT username, money_transaction, way, datetime, description FROM users
+                  JOIN transactions ON users.userId = transactions.transaction_id;""")
+        
+        data = {row["username"]: {key: value for key, value in dict(row).items() if key != row["username"]} for row in c.fetchall()}
     
     conn.commit()
     conn.close()
@@ -83,10 +94,10 @@ def save_file(data: dict, user_name: str, file_name: str, table_name: str) -> No
 
     return
 
-def update_file(data: dict, user_name: str, file_name: str, table_name: str, old_username: str=None) -> None:
-    create_table_if_not_exists(file_name, table_name)
+def update_file(data: dict, user_name: str, table_name: str, old_username: str=None) -> None:
+    create_table_if_not_exists(table_name)
 
-    conn = sqlite3.connect(file_name)
+    conn = sqlite3.connect("clients.db")
     c = conn.cursor()
     if not old_username:
         user_id = get_user_id(user_name)
@@ -121,19 +132,11 @@ def update_file(data: dict, user_name: str, file_name: str, table_name: str, old
 
 
 def delete_user(user_name: str) -> None:
-    create_table_if_not_exists("transactions.db", "transactions")
-    conn = sqlite3.connect("transactions.db")
-    c = conn.cursor()
-
-    c.execute("DELETE FROM transactions WHERE transaction_id = ?", (get_user_id(user_name), ))
-
-    conn.commit()
-    conn.close()
-
     conn = sqlite3.connect("clients.db")
     c = conn.cursor()
+    
     c.execute("DELETE FROM users WHERE username = ?", (user_name,))
-
+    c.execute("DELETE FROM transactions WHERE transaction_id = ?", (get_user_id(user_name), ))
     conn.commit()
     conn.close()
 

@@ -56,6 +56,7 @@ def call_finy(money: Decimal, user_currency: str, income: Decimal="N/A", goal: s
                         Never suggest to set anything since you can't change their settings (goals, income, money, currency).
                         Never make anything up.
                         In the end, always say: "To stop the conversation enter 'quit'"."""
+    
     # Analysis first, then chatting
     if mode == "basic":
         first_message: str = """This is default message, provided by developer. Analyze user's finances and give structured description.

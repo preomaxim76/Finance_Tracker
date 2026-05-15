@@ -1,7 +1,7 @@
 from utils import clear
 from decimal import Decimal
 from time import sleep
-from storage import update_file, open_file, delete_user
+from storage import update_file, delete_user
 from finance import goal, income, update
 from json import dump
 from settings import settings
@@ -9,7 +9,6 @@ from ai import call_finy
 import sys
 import os
 import bcrypt
-import sqlite3
 
 
 # Menu
@@ -75,14 +74,14 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
                             money = update(money, nickname, total_income=salary)
                             
                             user_data["money"] = float(money)
-                            update_file(user_data, nickname, file_name="clients.db", table_name="users")
+                            update_file(user_data, nickname, table_name="users")
 
                         case "income":
                             old = salary
                             salary = income(currency=user_currency, old_salary=old)
                             if salary:
                                 user_data["income"] = float(salary) if salary != "N/A" else old
-                                update_file(user_data, nickname, file_name="clients.db", table_name="users")
+                                update_file(user_data, nickname, table_name="users")
 
                         # Financial Goal
                         case "goal":
@@ -91,7 +90,7 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
                             if user_g:
                                 user_goal = user_g
                                 user_data["goal"] = user_goal
-                                update_file(user_data, nickname, file_name="clients.db", table_name="users")
+                                update_file(user_data, nickname, table_name="users")
 
 
                         case "quit":
@@ -141,7 +140,7 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
 
 
 
-                    update_file(user_data, nickname, file_name="clients.db", table_name="users", old_username=old_nickname)
+                    update_file(user_data, nickname, table_name="users", old_username=old_nickname)
 
 
 

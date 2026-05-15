@@ -41,7 +41,7 @@ def authorization() -> tuple[str, str]:
         
         if len(inpt.split()) == 2:
             nn, password = inpt.split()
-            dct = open_file(file_name="clients.db", table_name="users")
+            dct = open_file(table_name="users")
 
             if nn in dct and bcrypt.checkpw(password.encode(), dct[nn]["password"][2:-1].encode()):
                 return nn, password
@@ -84,7 +84,7 @@ def change_currency(data: dict, first: bool=True) -> dict:
     return data
 
 def generate_usernames(example: str) -> dict:
-    bad_usernames = open_file(file_name="clients.db", table_name="users").keys()
+    bad_usernames = open_file(table_name="users").keys()
     
     settings = f"""
                 Generate exactly 4 usernames similar in style to: {example}.
@@ -203,7 +203,7 @@ def change_nickname(users_data: dict) -> str:
 
 # Sign up -> data, nickname, password
 def sign_up() -> tuple[dict, str, str]:
-    users_data = open_file(file_name="clients.db", table_name="users")
+    users_data = open_file(table_name="users")
 
     # New user data
     data: dict = {}
@@ -230,7 +230,7 @@ def sign_up() -> tuple[dict, str, str]:
 
 
     # Saving data of our user to file users_finances.json
-    save_file(data=data, user_name=username, file_name="clients.db", table_name="users")
+    save_file(data=data, user_name=username, table_name="users")
 
     print("You have successfully registered!")
     sleep(2)
