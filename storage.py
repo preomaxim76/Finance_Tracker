@@ -48,7 +48,7 @@ def create_table_if_not_exists(table_name: str) -> None:
 
 
 # Opens file (in reality it opens a database (users/transactions)) and returns its content
-def open_file(table_name: str) -> dict:
+def open_file(table_name: str, count: int = 0) -> dict:
     create_table_if_not_exists("users")
     create_table_if_not_exists("transactions")
 
@@ -57,17 +57,29 @@ def open_file(table_name: str) -> dict:
     c = conn.cursor()
     
     if table_name == "users":
-        c.execute(f"SELECT * FROM users")
+        if count == 0:
+            c.execute("SELECT * FROM users;")
+        else:
+            c.execute("SELECT * FROM users LIMIT ?;", (count, ))
+
         data = {row["username"]: {key: value for key, value in dict(row).items() if key != row["username"]} for row in c.fetchall()}
         for key in data:
             data[key]["other_currencies"] = json.loads(data[key]["other_currencies"])
+    
 
     elif table_name == "transactions":
-        c.execute("""
-                SELECT username, money_transaction, way, datetime, description FROM users
+        if count == 0:
+            c.execute("""
+                SELECT money_transaction, way, datetime, description FROM users
                   JOIN transactions ON users.userId = transactions.transaction_id;""")
+        else:
+            c.execute("""
+                SELECT money_transaction, way, datetime, description FROM users
+                  JOIN transactions ON users.userId = transactions.transaction_id
+                      LIMIT ?;""", (count, ))
         
-        data = {row["username"]: {key: value for key, value in dict(row).items() if key != row["username"]} for row in c.fetchall()}
+        d = c.fetchall()
+        data = [{key: value for key, value in dict(row).items()} for row in d]
     
     conn.commit()
     conn.close()
@@ -75,11 +87,11 @@ def open_file(table_name: str) -> dict:
     
     return data
 
-def save_file(data: dict, user_name: str, file_name: str, table_name: str) -> None:
-    conn = sqlite3.connect(file_name)
+def save_file(data: dict, user_name: str, table_name: str) -> None:
+    conn = sqlite3.connect("clients.db")
     c = conn.cursor()
     if table_name == "users":
-        create_table_if_not_exists("clients.db", "users")
+        create_table_if_not_exists("users")
         
         password = data["password"]
         money = data["money"]

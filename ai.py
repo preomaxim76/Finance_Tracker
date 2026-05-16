@@ -5,6 +5,7 @@ from time import sleep
 from groq import Groq
 import os
 from dotenv import load_dotenv
+from storage import open_file
 
 load_dotenv()
 AI_API_KEY = os.getenv("AI")
@@ -48,6 +49,9 @@ def call_finy(money: Decimal, user_currency: str, income: Decimal="N/A", goal: s
 
     asks: list[str] = ["Chat with Finy: ", "Ask anything: ", "Anything else you wanted to talk about: ", "Ready to help: ", "Enter: ", "Start typing: ", "Reply: "]
 
+    # Last 15 transactions
+    last_transactions = open_file("transactions", 15)
+
     settings: str = f""" You're Finy, an assistant, built-in app called Finance_Tracker
                         You should be polite, but not too formal. You have to give a structured answer to users questions.
                         Also, do your best at creating your responses suitable for terminal, in which you would be used.
@@ -55,11 +59,13 @@ def call_finy(money: Decimal, user_currency: str, income: Decimal="N/A", goal: s
                         Users money: {money} {user_currency}. Their monthly income: {income}. Their current goal: {goal}.
                         Never suggest to set anything since you can't change their settings (goals, income, money, currency).
                         Never make anything up.
+                        Last 15 transactions: {last_transactions}.
                         In the end, always say: "To stop the conversation enter 'quit'"."""
     
     # Analysis first, then chatting
     if mode == "basic":
         first_message: str = """This is default message, provided by developer. Analyze user's finances and give structured description.
+                            Analysis should be HELPFUL. Do not just say what you know about them. Just some everything up and return some suggestions.
                             Hand them some advice. Make it look like you weren't asked to do this analysis.
                             Afterwards, you can communicate more freely.""" 
     # No analysis
