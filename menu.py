@@ -2,7 +2,7 @@ from utils import clear
 from decimal import Decimal
 from time import sleep
 from storage import update_file, delete_user
-from finance import goal, income, update
+from finance import goal, income, update, curr_overview
 from json import dump
 from settings import settings
 from ai import call_finy
@@ -106,7 +106,17 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
 
             # Detailed overview of the currency (including graphs)
             case "curr":
-                pass
+                if len(action) == 2 and action[1].isalpha():
+                    curr = action[1].upper()
+                    clear()
+                    curr_overview(curr, user_currency)
+                else:
+                    print("Error: function call invalid...\nCorrect: 'curr <currency>'.")
+                    sleep(1.5)
+
+
+
+
 
             case "settings":
                 call = settings(user_data, nickname, password)

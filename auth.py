@@ -3,15 +3,12 @@ import bcrypt
 from time import sleep
 from utils import clear
 from requests import get
-from dotenv import load_dotenv
 import os
 import sys
 from json import decoder
 from ai import call_ai
 
-load_dotenv()
-
-API_KEY = os.getenv("CURRENT_CURRENCY_VALUE_API")
+URL = "https://api.frankfurter.dev/v2/rates"
 
 
 # Authorizing and signing in
@@ -61,27 +58,23 @@ def change_currency(data: dict, first: bool=True) -> dict:
     while True:
         currency: str = input(output)
         print("Sending request...")
-
-        r = get(f"https://v6.exchangerate-api.com/v6/{API_KEY}/latest/{currency}")
-        try:
-            dct = r.json()["conversion_rates"]
-        except (decoder.JSONDecodeError, KeyError):
+        params = {
+            "base": currency,
+        }
+        lst = get(URL, params).json()
+        if lst == [] or type(lst) == dict:
             print(f"Error: We couldn't find {currency} currency. Please enter a valid currency.")
             continue
-        st_code = r.status_code
-        if str(st_code)[0] == "2": # OK
-            other_curr = {}
 
-            for curr in converting_currencies:
-                curr =  curr.upper()
-                if curr != currency and curr in dct:
-                    other_curr[curr] = dct[curr]
+        other_curr = {}
+        for curr in lst:
+            if curr["quote"] in converting_currencies:
+                other_curr[curr["quote"]] = curr["rate"]
 
-            data.update({"user_currency": currency.upper(), "other_currencies": other_curr})
-            break
-        else:
-            print("Error occurred, while sending request (for developer):",  st_code)
-    return data
+
+        data.update({"user_currency": currency.upper(), "other_currencies": other_curr})
+        
+        return data
 
 def generate_usernames(example: str) -> dict:
     bad_usernames = open_file(table_name="users").keys()

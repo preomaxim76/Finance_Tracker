@@ -1,2 +1,4 @@
 https://app.exchangerate-api.com/dashboard - API for current currency values
-https://exchangerate.host/dashboard - API for historic currency values
+
+
+https://frankfurter.dev/?utm_source=chatgpt.com
