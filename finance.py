@@ -8,7 +8,6 @@ import os
 from datetime import datetime, date, timedelta
 import plotly.express as px
 from requests import get
-import pandas as pd
 from dateutil.parser import parse, _parser
 
 load_dotenv()
@@ -186,45 +185,35 @@ def overview(currency: str, user_currency: str) -> tuple[str]:
 
     # Todays year rounded to 0 or 5
     today = date.today()
-    rounded_today =  today.year // 5 * 5
-    beginning = rounded_today - 30
-    years: list[int] = [year for year in range(beginning, rounded_today+1, 5)]
-    values: list[float] = []
+    beginning = today.year - 30
 
     # Find values
-    url = "https://api.frankfurter.dev/v2/rates"
+    url = f"https://api.frankfurter.app/{beginning}-01-01..{today}"
+
+    params = {
+        "from": currency,
+        "to": convert_currency
+    }
     
     try:
-        for year in years:
-            params = {
-            "base": currency,
-            "quotes": convert_currency,
-            "date": f"{year}-01-01"
-            }
-            response = get(url, params)
-            values.append(response.json()[0]["rate"])
-    except (KeyError, IndexError):
+        days = []
+        values = []
+        request = get(url, params).json()["rates"]
+
+        for key, value in request.items():
+            days.append(key)
+            values.append(value[convert_currency])
+
+    except KeyError:
         return "Invalid",
 
-    if today.year != rounded_today:
-        params = {
-            "base": currency,
-            "quotes": convert_currency,
-            "date": f"{today.year}-{today.month}-{today.day}"
-        }
-        response = get(url, params)
-        years.append(today.year)
-        todays_rate = response.json()[0]["rate"]
-        values.append(todays_rate)
-    df = pd.DataFrame({
-        "X_data": years,
-        "Y_data": values
-    })
+    
+    df = px.data.stocks()
 
-    fig = px.line(df, x="X_data", y="Y_data", title=f"{currency} Change Through {beginning}-01-01 To {today} In {convert_currency}", 
+    fig = px.line(df, x=days, y=values, title=f"{currency} -> {convert_currency} Change Through {beginning}-01-01 To {today}", 
                      labels=
                      {
-                         "X_data": "years",
+                         "X_data": "days",
                          "Y_data": convert_currency
                      })
     
@@ -238,9 +227,17 @@ def overview(currency: str, user_currency: str) -> tuple[str]:
     history = [
         {"role": "system", "content": settings}
     ]
+
+    params = {
+        "base": currency,
+        "quotes": convert_currency
+    }
+
+    r = get("https://api.frankfurter.dev/v2/rates", params).json()[0]
+
     clear()
-    print(f"{currency.upper()}: Description")
-    print()
+    print(f"{currency.upper()}: Description\n")
+    print(f"{currency}: {r['rate']} {convert_currency}")
     print()
     print("-" * 30)
     for chunk in call_ai(history):
@@ -286,8 +283,10 @@ def curr_overview(currency: str, user_currency: str) -> None:
         try:
             value = float(user_input[0])
         except ValueError:
+            print()
             print("Error: please enter integer or decimal in the first field...")
             sleep(1.5)
+            print()
             continue
 
         if len(user_input) == 2:

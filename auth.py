@@ -58,9 +58,11 @@ def change_currency(data: dict, first: bool=True) -> dict:
     while True:
         currency: str = input(output)
         print("Sending request...")
+
         params = {
             "base": currency,
         }
+        
         lst = get(URL, params).json()
         if lst == [] or type(lst) == dict:
             print(f"Error: We couldn't find {currency} currency. Please enter a valid currency.")
