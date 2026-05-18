@@ -5,10 +5,11 @@ from storage import update_file
 from ai import call_ai
 from dotenv import load_dotenv
 import os
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import plotly.express as px
 from requests import get
 import pandas as pd
+from dateutil.parser import parse, _parser
 
 load_dotenv()
 API_KEY = os.getenv("HISTORIC_CURRENCY_VALUE_API")
@@ -276,22 +277,25 @@ def curr_overview(currency: str, user_currency: str) -> None:
             break
 
         user_input = user_input.split()
-        
-        if len(user_input) == 2:
-            curr = user_input[1].upper()
-            
-            try:
-                value = float(user_input[0])
-            except TypeError:
-                print("Error: please enter integer or decimal in the first field...")
-                sleep(1.5)
-                continue
+        length = len(user_input)
 
+        if length not in (2, 3):
+            print("Error: please enter valid input...")
+            continue
+        curr = user_input[1].upper()
+        try:
+            value = float(user_input[0])
+        except ValueError:
+            print("Error: please enter integer or decimal in the first field...")
+            sleep(1.5)
+            continue
+
+        if len(user_input) == 2:
             if curr == currency:
                 print()
-                print("-" * 40)
+                print("-" * 30)
                 print(f"{value} {user_input[1]} = {value} {user_input[1]}")
-                print("-" * 40)
+                print("-" * 30)
                 print()
                 continue
 
@@ -300,27 +304,56 @@ def curr_overview(currency: str, user_currency: str) -> None:
                 "quotes": currency,
                 "date": f"{today.year}-{today.month}-{today.day}"
             }    
-            curr_output = get(url, params)
-            if curr_output == []:
-                print("Error: please enter a valid currency...")
-                sleep(1.5)
-                continue
-            try:
-                curr_value = curr_output.json()[0]["rate"]
-            except KeyError:
-                print("Error: please enter a valid currency...")
-                sleep(1.5)
-                continue
-            print()
-            print("-" * 15)
-            print(f"{value} {curr} = {curr_value * value} {currency}")
-            print("-" * 15)
-            print()
             
-            
-
-        elif len(user_input) == 3:
-            pass
-
         else:
-            print("Error: please enter valid input...")
+            try:
+                user_datetime = parse(user_input[2])
+            except _parser.ParserError:
+                print("Error: please enter a valid datetime...")
+                continue
+            if not datetime(beginning, 1, 1) < user_datetime <= datetime(today.year, today.month, today.day):
+                print(f"Error: please enter date between {beginning} and {today}.")
+                continue
+            user_date = user_datetime.date()
+
+            if curr == currency:
+                params = {
+                    "base": curr,
+                    "quotes": currency
+                }
+                todays_rate = get(url, params)
+
+                params = {
+                    "base": curr,
+                    "quotes": currency,
+                    "date": user_date
+                }
+                previous_rate = get(url, params)
+
+                print("-" * 30)
+                print(f"{value} {curr} = {value * todays_rate / previous_rate} {curr}")
+                print("-" * 30)
+                continue
+            
+            params = {
+                "base": curr,
+                "quotes": currency, 
+                "date": f"{user_date.year}-{user_date.month}-{user_date.day}"
+            }
+        
+        curr_output = get(url, params)
+        if curr_output == []:
+            print("Error: please enter a valid currency...")
+            sleep(1.5)
+            continue
+        try:
+            curr_value = curr_output.json()[0]["rate"]
+        except (KeyError, IndexError):
+            print("Error: please enter a valid currency...")
+            sleep(1.5)
+            continue
+        print()
+        print("-" * 30)
+        print(f"{value} {curr} = {curr_value * value} {currency}")
+        print("-" * 30)
+        print()
