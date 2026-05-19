@@ -2,8 +2,7 @@ import os
 from datetime import datetime, time
 
 
-
-# System functions
+# System functions:
 
 # Clear the terminal - style
 def clear() -> None:
@@ -24,5 +23,6 @@ def greeting(nickname: str) -> str:
         daytime = "evening"
     else:
         daytime = "night"
+        
     return f"Good {daytime}, {nickname}!"
 

@@ -11,7 +11,8 @@ import os
 import bcrypt
 
 
-# Menu
+# Menu: printing out menu that user can interact with
+# Access to all other functions (including quitting)
 def menu(nickname: str, user_data: dict, password: str) -> None:
     clear()
 
@@ -36,11 +37,11 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
         
         for curr, value in user_data["other_currencies"].items():
             value = Decimal(value)
-
+            # Rounded to 3 after point to look better
             print(f"{curr}: {round(value, 3)} {user_currency} - {round(money * value, 3)} {curr}")
         
         print()
-        print("MENU: \n1. FINANCE\n2. FINY - integrated AI to help you with your finances (FINY CHAT to start chatting now)\n3. CURR <currency> - returns detailed overview of the currency\n4. SETTINGS\n5. QUIT")
+        print("MENU: \n1. FINANCE - manipulating finances\n2. FINY - integrated AI to help you with your finances (FINY CHAT to start chatting now)\n3. CURR <currency> - returns detailed overview of the currency\n4. SETTINGS\n5. QUIT")
 
         while True:
             action: str = input("INPUT: ").split()
@@ -53,6 +54,7 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
                 break
 
         match func:
+            # finance.py functions
             case "finance":
                 av = ["update", "income", "goal", "quit"]
                 while True:
@@ -99,24 +101,29 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
 
             # Chatting with integrated AI Finy
             case "finy":
+                # If one -> "FINY" => Analysis first, conversation secondly
                 if len(action) == 1:
                     call_finy(money, user_currency, salary, user_goal)
-                else:
+                
+                # If two -> "FINY CHAT" => Chatting from the beginning
+                elif len(action) == 2 and action[1].lower() == "chat":
                     call_finy(money, user_currency, salary, user_goal, mode="chat")
+
+                # Invalid
+                else:
+                    print("Error: function call invalid...\nCorrect: 'FINY CHAT'.")
+                    sleep(1.5)
 
             # Detailed overview of the currency (including graphs)
             case "curr":
+                # Should be of length 2 (CURR <currency>)
                 if len(action) == 2 and action[1].isalpha():
                     curr = action[1].upper()
                     clear()
                     curr_overview(curr, user_currency)
                 else:
-                    print("Error: function call invalid...\nCorrect: 'curr <currency>'.")
+                    print("Error: function call invalid...\nCorrect: 'CURR <currency>'.")
                     sleep(1.5)
-
-
-
-
 
             case "settings":
                 call = settings(user_data, nickname, password)
@@ -146,13 +153,7 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
                     else:
                         old_nickname = None
                         
-
-
-
-
                     update_file(user_data, nickname, table_name="users", old_username=old_nickname)
-
-
 
             # Quit
             case "quit":

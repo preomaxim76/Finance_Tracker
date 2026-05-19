@@ -3,9 +3,11 @@ import json
 
 # Returns user id; uses username (provided as an argument) to find it;
 def get_user_id(username: str) -> str:
+    # The only database
     conn = sqlite3.connect("clients.db")
     c = conn.cursor()
 
+    # From users
     c.execute("SELECT userId FROM users WHERE username = ?", (username, ))
     
     userid = c.fetchone()[0]
@@ -43,9 +45,7 @@ def create_table_if_not_exists(table_name: str) -> None:
     conn.commit()
     conn.close()
 
-
     return
-
 
 # Opens file (in reality it opens a database (users/transactions)) and returns its content
 def open_file(table_name: str, count: int = 0) -> dict:
@@ -56,6 +56,7 @@ def open_file(table_name: str, count: int = 0) -> dict:
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     
+    # Table users
     if table_name == "users":
         if count == 0:
             c.execute("SELECT * FROM users;")
@@ -67,6 +68,7 @@ def open_file(table_name: str, count: int = 0) -> dict:
             data[key]["other_currencies"] = json.loads(data[key]["other_currencies"])
     
 
+    # Table transactions
     elif table_name == "transactions":
         if count == 0:
             c.execute("""
@@ -81,12 +83,14 @@ def open_file(table_name: str, count: int = 0) -> dict:
         d = c.fetchall()
         data = [{key: value for key, value in dict(row).items()} for row in d]
     
+    # Any other table? 
+
     conn.commit()
     conn.close()
-
     
     return data
 
+# Saving the whole file
 def save_file(data: dict, user_name: str, table_name: str) -> None:
     conn = sqlite3.connect("clients.db")
     c = conn.cursor()
@@ -106,16 +110,19 @@ def save_file(data: dict, user_name: str, table_name: str) -> None:
 
     return
 
+# Updating the whole file
 def update_file(data: dict, user_name: str, table_name: str, old_username: str=None) -> None:
     create_table_if_not_exists(table_name)
 
     conn = sqlite3.connect("clients.db")
     c = conn.cursor()
+    # Which username should we use when trying to find user_id?
     if not old_username:
         user_id = get_user_id(user_name)
     else:
         user_id = get_user_id(old_username)
 
+    # Updating users
     if table_name == "users":
         password = data["password"]
         money = data["money"]
@@ -136,13 +143,12 @@ def update_file(data: dict, user_name: str, table_name: str, old_username: str=N
         c.execute("INSERT INTO transactions (transaction_id, money_transaction, way, datetime, description) VALUES (?, ?, ?, ?, ?);", 
                   (user_id, total_money, way, transaction_datetime, description))
 
-
     conn.commit()
     conn.close()
 
     return
 
-
+# Permanent deletion
 def delete_user(user_name: str) -> None:
     conn = sqlite3.connect("clients.db")
     c = conn.cursor()
@@ -151,7 +157,5 @@ def delete_user(user_name: str) -> None:
     c.execute("DELETE FROM transactions WHERE transaction_id = ?", (get_user_id(user_name), ))
     conn.commit()
     conn.close()
-
-    
 
     return

@@ -12,7 +12,7 @@ AI_API_KEY = os.getenv("AI")
 
 client = Groq(api_key=AI_API_KEY)
 
-# Calling ai
+# Calling ai: this function returns ai answer (either by words or characters)
 def call_ai(history: list[dict], mode="char"):
 
     response = client.chat.completions.create(
@@ -20,11 +20,14 @@ def call_ai(history: list[dict], mode="char"):
         messages=history,
         stream=True
     )
+
+    # Character one by one
     if mode == "char":
         for chunk in response:
             text = chunk.choices[0].delta.content
             if text:
                 yield text
+    # Word one by one
     elif mode == "word":
         text = ""
         for chunk in response:
@@ -42,11 +45,13 @@ def call_ai(history: list[dict], mode="char"):
                 text = text + t 
     
 
+# Calling finy - adding settings to ai: basic (Analysis) or chat (Just chatting with ai)
 def call_finy(money: Decimal, user_currency: str, income: Decimal="N/A", goal: str="N/A", mode: str="basic") -> None:
     clear()
     print("----- FINY -----")
     print()
 
+    # The variety of asks (print messages)
     asks: list[str] = ["Chat with Finy: ", "Ask anything: ", "Anything else you wanted to talk about: ", "Ready to help: ", "Enter: ", "Start typing: ", "Reply: "]
 
     # Last 15 transactions
@@ -56,7 +61,7 @@ def call_finy(money: Decimal, user_currency: str, income: Decimal="N/A", goal: s
                         You should be polite, but not too formal. You have to give a structured answer to users questions.
                         Also, do your best at creating your responses suitable for terminal, in which you would be used.
                         Do not write too much words. Change the style of your speech only if the user asks for it directly.
-                        Users money: {money} {user_currency}. Their monthly income: {income}. Their current goal: {goal}.
+                        Users money: {round(money, 3)} {user_currency}. Their monthly income: {income}. Their current goal: {goal}.
                         Never suggest to set anything since you can't change their settings (goals, income, money, currency).
                         Never make anything up.
                         Last 15 transactions: {last_transactions}.
@@ -68,7 +73,7 @@ def call_finy(money: Decimal, user_currency: str, income: Decimal="N/A", goal: s
                             Analysis should be HELPFUL. Do not just say what you know about them. Just some everything up and return some suggestions.
                             Hand them some advice. Make it look like you weren't asked to do this analysis.
                             Afterwards, you can communicate more freely.""" 
-    # No analysis
+    # No analysis, just chatting
     elif mode == "chat":
         print("~You:")
         first_message = input("Start chatting with Finy: ")
@@ -77,13 +82,16 @@ def call_finy(money: Decimal, user_currency: str, income: Decimal="N/A", goal: s
         {"role": "system", "content": settings},
         {"role": "user", "content": first_message}
     ]
+
     print()
     print("~Finy:")
 
-    full_response = ""
+    full_response = "" # To save responses to history
+
+    # Calling ai
     for chunk in call_ai(history):
-        print(f"\033[3m{chunk}\033[0m", end="", flush=True)
-        full_response = full_response + chunk
+        print(f"\033[3m{chunk}\033[0m", end="", flush=True) # Making it look italic (font-family)
+        full_response = full_response + chunk # Adding to response chunk by chunk 
         sleep(0.05)
     history.append({"role": "assistant", "content": full_response})
     print()

@@ -13,6 +13,7 @@ def main() -> None:
     print("Keep Track of your finances!")
     print()
     nickname, password = authorization()
+    
     if nickname == "": # The user does not have an account
         user_data, nickname, password = sign_up()
     else:

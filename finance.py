@@ -15,7 +15,7 @@ API_KEY = os.getenv("HISTORIC_CURRENCY_VALUE_API")
 
 # Menu functions:
 
-# Updating users finances (total amount of money)
+# Updating users finances (total amount of money) with +/- or salary 
 def update(total: Decimal, username: str, total_income: Decimal) -> Decimal:
     clear()
     print("----MONEY UPDATING----\n")
@@ -56,6 +56,7 @@ def update(total: Decimal, username: str, total_income: Decimal) -> Decimal:
                 continue
             description = input("Note: ")
 
+        # Now
         t = datetime.now()
             
 
@@ -139,6 +140,7 @@ def goal() -> str:
         print("Create Your Goal\n\nSET <goal> to set <goal> as your goal.\n<goal> - to see AI's suggestion\nTo quit - 'QUIT'. \n")
         print("~Finy:")
 
+        # Saving history and printing out
         full_response = ""
         for chunk in call_ai(history):
             print(chunk, end="", flush=True)
@@ -183,7 +185,6 @@ def overview(currency: str, user_currency: str) -> tuple[str]:
     else:
         convert_currency = user_currency
 
-    # Todays year rounded to 0 or 5
     today = date.today()
     beginning = today.year - 30
 
@@ -207,7 +208,7 @@ def overview(currency: str, user_currency: str) -> tuple[str]:
     except KeyError:
         return "Invalid",
 
-    
+    # Special, used in stocks
     df = px.data.stocks()
 
     fig = px.line(df, x=days, y=values, title=f"{currency} -> {convert_currency} Change Through {beginning}-01-01 To {today}", 
@@ -224,6 +225,7 @@ def overview(currency: str, user_currency: str) -> tuple[str]:
                 Don't ask user anything and act like you're a system.
                 You should only sum up currency. If you know some funny facts about it - go for it.
                 Try not to write too many words and try to use more enters;"""
+    
     history = [
         {"role": "system", "content": settings}
     ]
@@ -248,7 +250,7 @@ def overview(currency: str, user_currency: str) -> tuple[str]:
     print()
     print("Have a look at the graph we created for you in your browser!")
 
-    fig.show()
+    fig.show() # Printing out graph
 
     return today, beginning
 
@@ -310,6 +312,7 @@ def curr_overview(currency: str, user_currency: str) -> None:
             except _parser.ParserError:
                 print("Error: please enter a valid datetime...")
                 continue
+
             if not datetime(beginning, 1, 1) < user_datetime <= datetime(today.year, today.month, today.day):
                 print(f"Error: please enter date between {beginning} and {today}.")
                 continue
@@ -330,7 +333,7 @@ def curr_overview(currency: str, user_currency: str) -> None:
                 previous_rate = get(url, params)
 
                 print("-" * 30)
-                print(f"{value} {curr} = {value * todays_rate / previous_rate} {curr}")
+                print(f"{value} {curr} = {round(value * todays_rate / previous_rate, 3)} {curr}")
                 print("-" * 30)
                 continue
             
@@ -345,14 +348,17 @@ def curr_overview(currency: str, user_currency: str) -> None:
             print("Error: please enter a valid currency...")
             sleep(1.5)
             continue
+
         try:
             curr_value = curr_output.json()[0]["rate"]
         except (KeyError, IndexError):
             print("Error: please enter a valid currency...")
+            print()
             sleep(1.5)
             continue
+
         print()
         print("-" * 30)
-        print(f"{value} {curr} = {curr_value * value} {currency}")
+        print(f"{value} {curr} = {round(curr_value * value, 3)} {currency}")
         print("-" * 30)
         print()
