@@ -46,7 +46,7 @@ def call_ai(history: list[dict], mode="char"):
     
 
 # Calling finy - adding settings to ai: basic (Analysis) or chat (Just chatting with ai)
-def call_finy(money: Decimal, user_currency: str, income: Decimal="N/A", goal: str="N/A", mode: str="basic") -> None:
+def call_finy(money: Decimal, user_currency: str, username: str, income: Decimal="N/A", goal: str="N/A", mode: str="basic") -> None:
     clear()
     print("----- FINY -----")
     print()
@@ -55,13 +55,13 @@ def call_finy(money: Decimal, user_currency: str, income: Decimal="N/A", goal: s
     asks: list[str] = ["Chat with Finy: ", "Ask anything: ", "Anything else you wanted to talk about: ", "Ready to help: ", "Enter: ", "Start typing: ", "Reply: "]
 
     # Last 15 transactions
-    last_transactions = open_file("transactions", 15)
+    last_transactions = open_file("transactions", 15, username)
 
     settings: str = f""" You're Finy, an assistant, built-in app called Finance_Tracker
                         You should be polite, but not too formal. You have to give a structured answer to users questions.
                         Also, do your best at creating your responses suitable for terminal, in which you would be used.
                         Do not write too much words. Change the style of your speech only if the user asks for it directly.
-                        Users money: {round(money, 3)} {user_currency}. Their monthly income: {income}. Their current goal: {goal}.
+                        Username: {username}. Users money: {round(money, 3)} {user_currency}. Their monthly income: {income}. Their current goal: {goal}.
                         Never suggest to set anything since you can't change their settings (goals, income, money, currency).
                         Never make anything up.
                         Last 15 transactions: {last_transactions}.
@@ -94,7 +94,6 @@ def call_finy(money: Decimal, user_currency: str, income: Decimal="N/A", goal: s
         full_response = full_response + chunk # Adding to response chunk by chunk 
         sleep(0.05)
     history.append({"role": "assistant", "content": full_response})
-    print()
     
     while True:
         print()

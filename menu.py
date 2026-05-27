@@ -2,7 +2,7 @@ from utils import clear
 from decimal import Decimal
 from time import sleep
 from storage import update_file, delete_user
-from finance import goal, income, update, curr_overview
+from finance import goal, income, update, curr_overview, last_transactions
 from json import dump
 from settings import settings
 from ai import call_finy
@@ -17,7 +17,7 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
     clear()
 
     # Available functions
-    available: list = ["finance", "finy", "curr", "settings", "quit", "finy chat"]
+    available: list = ["finance", "finy", "curr", "last", "settings", "quit", "finy chat"]
 
     # Users total money
     money: Decimal = Decimal(user_data["money"])
@@ -41,7 +41,7 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
             print(f"{curr}: {round(value, 3)} {user_currency} - {round(money * value, 3)} {curr}")
         
         print()
-        print("MENU: \n1. FINANCE - manipulating finances\n2. FINY - integrated AI to help you with your finances (FINY CHAT to start chatting now)\n3. CURR <currency> - returns detailed overview of the currency\n4. SETTINGS\n5. QUIT")
+        print("MENU: \n1. FINANCE - manipulating finances\n2. FINY - integrated AI to help you with your finances (FINY CHAT to start chatting now)\n3. CURR <currency> - returns detailed overview of the currency\n4. LAST - to view your last transactions\n5. SETTINGS\n6. QUIT")
 
         while True:
             action: str = input("INPUT: ").split()
@@ -73,10 +73,10 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
 
                     match act:
                         case "update":
-                            money = update(money, nickname, total_income=salary)
+                            money = update(money, nickname, salary, user_currency)
                             
                             user_data["money"] = float(money)
-                            update_file(user_data, nickname, table_name="users")
+                            update_file(user_data, nickname, currency=user_currency, table_name="users")
 
                         case "income":
                             old = salary
@@ -103,11 +103,11 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
             case "finy":
                 # If one -> "FINY" => Analysis first, conversation secondly
                 if len(action) == 1:
-                    call_finy(money, user_currency, salary, user_goal)
+                    call_finy(money, user_currency, nickname, salary, user_goal)
                 
                 # If two -> "FINY CHAT" => Chatting from the beginning
                 elif len(action) == 2 and action[1].lower() == "chat":
-                    call_finy(money, user_currency, salary, user_goal, mode="chat")
+                    call_finy(money, user_currency, nickname, salary, user_goal, mode="chat")
 
                 # Invalid
                 else:
@@ -124,6 +124,9 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
                 else:
                     print("Error: function call invalid...\nCorrect: 'CURR <currency>'.")
                     sleep(1.5)
+                
+            case "last":
+                last_transactions(nickname)
 
             case "settings":
                 call = settings(user_data, nickname, password)

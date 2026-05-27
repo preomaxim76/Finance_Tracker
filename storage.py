@@ -38,6 +38,7 @@ def create_table_if_not_exists(table_name: str) -> None:
                 CREATE TABLE IF NOT EXISTS transactions (
                 transaction_id INTEGER,
                 money_transaction REAL NOT NULL,
+                currency TEXT NOT NULL,
                 way TEXT NOT NULL,
                 datetime TEXT NOT NULL, 
                 description TEXT)""")
@@ -48,7 +49,7 @@ def create_table_if_not_exists(table_name: str) -> None:
     return
 
 # Opens file (in reality it opens a database (users/transactions)) and returns its content
-def open_file(table_name: str, count: int = 0) -> dict:
+def open_file(table_name: str, count: int = 0, nickname: str="") -> dict:
     create_table_if_not_exists("users")
     create_table_if_not_exists("transactions")
 
@@ -70,15 +71,23 @@ def open_file(table_name: str, count: int = 0) -> dict:
 
     # Table transactions
     elif table_name == "transactions":
+        userId = get_user_id(nickname)
         if count == 0:
             c.execute("""
-                SELECT money_transaction, way, datetime, description FROM users
-                  JOIN transactions ON users.userId = transactions.transaction_id;""")
-        else:
-            c.execute("""
-                SELECT money_transaction, way, datetime, description FROM users
+                SELECT money_transaction, way, currency, datetime, description FROM users 
                   JOIN transactions ON users.userId = transactions.transaction_id
-                      LIMIT ?;""", (count, ))
+                      WHERE transaction_id = ?;""", (userId, ))
+        else:
+            c.execute("SELECT COUNT (*) FROM transactions WHERE transaction_id = ?;", (userId, ))
+            transaction_count = c.fetchone()[0]
+            if transaction_count < count:
+                count = transaction_count
+
+            c.execute("""
+                SELECT money_transaction, way, currency, datetime, description FROM users 
+                  JOIN transactions ON users.userId = transactions.transaction_id
+                      WHERE transaction_id = ?
+                      LIMIT ?;""", (userId, count))
         
         d = c.fetchall()
         data = [{key: value for key, value in dict(row).items()} for row in d]
@@ -111,7 +120,7 @@ def save_file(data: dict, user_name: str, table_name: str) -> None:
     return
 
 # Updating the whole file
-def update_file(data: dict, user_name: str, table_name: str, old_username: str=None) -> None:
+def update_file(data: dict, user_name: str, table_name: str, currency: str = "", old_username: str=None) -> None:
     create_table_if_not_exists(table_name)
 
     conn = sqlite3.connect("clients.db")
@@ -140,8 +149,8 @@ def update_file(data: dict, user_name: str, table_name: str, old_username: str=N
         way = data["way"]
         transaction_datetime = str(data["datetime"])
         description = data["description"]
-        c.execute("INSERT INTO transactions (transaction_id, money_transaction, way, datetime, description) VALUES (?, ?, ?, ?, ?);", 
-                  (user_id, total_money, way, transaction_datetime, description))
+        c.execute("INSERT INTO transactions (transaction_id, money_transaction, currency, way, datetime, description) VALUES (?, ?, ?, ?, ?, ?);", 
+                  (user_id, total_money, currency, way, transaction_datetime, description))
 
     conn.commit()
     conn.close()

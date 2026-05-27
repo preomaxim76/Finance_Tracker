@@ -5,10 +5,11 @@ from storage import update_file
 from ai import call_ai
 from dotenv import load_dotenv
 import os
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 import plotly.express as px
 from requests import get
 from dateutil.parser import parse, _parser
+from storage import open_file
 
 load_dotenv()
 API_KEY = os.getenv("HISTORIC_CURRENCY_VALUE_API")
@@ -16,7 +17,7 @@ API_KEY = os.getenv("HISTORIC_CURRENCY_VALUE_API")
 # Menu functions:
 
 # Updating users finances (total amount of money) with +/- or salary 
-def update(total: Decimal, username: str, total_income: Decimal) -> Decimal:
+def update(total: Decimal, username: str, total_income: Decimal, currency: str) -> Decimal:
     clear()
     print("----MONEY UPDATING----\n")
     print("Please enter +'number' or -'number' to add or delete money from your total amount.\nTo add your salary enter 'salary'.\nTo exit - 'quit'.\n")
@@ -34,7 +35,6 @@ def update(total: Decimal, username: str, total_income: Decimal) -> Decimal:
             money = total_income
             start = "+"
             sleep(1)
-
             
         else:
             start = command[0]
@@ -63,10 +63,9 @@ def update(total: Decimal, username: str, total_income: Decimal) -> Decimal:
         update_file(
             data={"username": username, "money_transaction": money, "way": start, "datetime": t, "description": description},
             user_name=username, 
+            currency=currency,
             table_name="transactions"
         )
-
-
 
 # Updating users monthly income
 def income(currency: str, old_salary: Decimal) -> Decimal:
@@ -98,10 +97,8 @@ def income(currency: str, old_salary: Decimal) -> Decimal:
             sleep(1.5)
             return salary
             
-
         except InvalidOperation:
             print(f"Error: {user_input} is not a number.")
-
 
 # Setting a goal
 def goal() -> str:
@@ -134,7 +131,6 @@ def goal() -> str:
         {"role": "user", "content": users_goal}
     ]
 
-    
     while True:
         clear()
         print("Create Your Goal\n\nSET <goal> to set <goal> as your goal.\n<goal> - to see AI's suggestion\nTo quit - 'QUIT'. \n")
@@ -169,11 +165,6 @@ def goal() -> str:
         
         history.append({"role": "user", "content": user_message})
         
-        
-        
-    
-
-
 # Detailed overview of the currency, including graphs
 def overview(currency: str, user_currency: str) -> tuple[str]:
     # Find the currency to convert to:
@@ -188,7 +179,7 @@ def overview(currency: str, user_currency: str) -> tuple[str]:
     today = date.today()
     beginning = today.year - 30
 
-    # Find values
+    # Find valuespass
     url = f"https://api.frankfurter.app/{beginning}-01-01..{today}"
 
     params = {
@@ -362,3 +353,120 @@ def curr_overview(currency: str, user_currency: str) -> None:
         print(f"{value} {curr} = {round(curr_value * value, 3)} {currency}")
         print("-" * 30)
         print()
+
+# Sorting for last_transactions function
+def _sort(data: dict) -> None:
+    clear()
+    print("--- Keep Track of Your Transactions ---\n")
+    for transaction in data:
+        print(f"{transaction['way']}{transaction['money_transaction']} {transaction['currency']} at {transaction['datetime']}")
+    print()
+    print("Sort By:\n1. DATE - sort by date\n2. TIME - sort by time\n3. DATETIME - sort by date & time\n4. COST - sort by money transaction\n5. QUIT\nASC - ascending DESC - descending\n")
+
+    while True:
+        way = input("INPUT: ").lower().strip()
+
+        if way == "quit":
+            break
+
+        if not way.isalpha():
+            print("Error: please enter valid input...")
+            continue
+        
+        if not " " in way:
+            print("Error: Please enter <sortby> and <ASC/DESC>...")
+            continue
+
+        way = way.split()
+
+        sortby = way[0]
+        level = way[1]
+
+        if level not in ("asc", "desc"):
+            print("Error: please enter ASC or DESC as a second argument...")
+            continue
+        
+        match sortby:
+            case "date":
+                pass
+
+            case "time":
+                pass
+
+            case "datetime":
+                pass
+
+            case "cost":
+                pass
+
+            case _:
+                print("Error: INVALID <sortby>")
+        break
+
+        
+
+def last_transactions(nickname: str) -> None:
+    clear()
+    slogan: str = "--- Keep Track of Your Transactions ---\n"
+    print(slogan)
+    print("Enter how many transactions you would like to view.")
+    while True:
+        try:
+            number = int(input("INPUT: "))
+            break
+
+        except TypeError:
+            print("Error: please enter a number...")
+            sleep(0.5)
+            continue
+    data = open_file("transactions", number, nickname=nickname)
+    clear()
+    print(slogan)
+    for transaction in data:
+        print(f"{transaction['way']}{transaction['money_transaction']} {transaction['currency']} at {transaction['datetime']}")
+    print()
+    print("MENU:")
+    print("1. SORT\n2. FIND <date/time>\n3. QUIT\n")
+
+    while True:
+        menu_choice = input("INPUT: ").lower().strip()
+
+        # Checking #1 if input is valid
+        if not menu_choice.isalpha():
+            print("Error: please enter a VALID function...")
+            continue
+        
+        # Quit
+        if menu_choice == "quit":
+            break
+
+        if " " in menu_choice:
+            func = menu_choice.split()[0]
+            arg = menu_choice.split()[1]
+        else:
+            func = menu_choice
+            arg = None
+        
+        match func:
+            # SORT
+            case "sort":
+                _sort(data)
+
+            # FIND
+            case "find":
+                # Only function was given
+                if not arg:
+                    print("Error: FIND function takes argument <date/time>")
+                
+                # Check whether <date> is correct
+                try:
+                    transaction_datetime = parse(arg)
+
+                except _parser.ParserError:
+                    print("Error: given date/time is invalid... Please enter at least year...")
+
+            # Invalid Function
+            case _:
+                print(f"Error: {func.upper()} is not a valid function...")
+
+
