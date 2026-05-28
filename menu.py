@@ -45,7 +45,11 @@ def menu(nickname: str, user_data: dict, password: str) -> None:
 
         while True:
             action: str = input("INPUT: ").split()
-            func = action[0].lower().strip()
+            try:
+                func = action[0].lower().strip()
+            except IndexError:
+                print(f"Error: function {func} is not found...")
+                sleep(0.1)
 
             if func not in available:
                 print(f"Error: function {func} is not found...")

@@ -55,7 +55,7 @@ def call_finy(money: Decimal, user_currency: str, username: str, income: Decimal
     asks: list[str] = ["Chat with Finy: ", "Ask anything: ", "Anything else you wanted to talk about: ", "Ready to help: ", "Enter: ", "Start typing: ", "Reply: "]
 
     # Last 15 transactions
-    last_transactions = open_file("transactions", 15, username)
+    last_transactions: list = open_file("transactions", 15, username)
 
     settings: str = f""" You're Finy, an assistant, built-in app called Finance_Tracker
                         You should be polite, but not too formal. You have to give a structured answer to users questions.

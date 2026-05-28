@@ -245,6 +245,7 @@ def overview(currency: str, user_currency: str) -> tuple[str]:
 
     return today, beginning
 
+# Currency overview
 def curr_overview(currency: str, user_currency: str) -> None:
     url = "https://api.frankfurter.dev/v2/rates"
     func_return = overview(currency, user_currency)
@@ -355,26 +356,22 @@ def curr_overview(currency: str, user_currency: str) -> None:
         print()
 
 # Sorting for last_transactions function
-def _sort(data: dict) -> None:
-    clear()
-    print("--- Keep Track of Your Transactions ---\n")
-    for transaction in data:
-        print(f"{transaction['way']}{transaction['money_transaction']} {transaction['currency']} at {transaction['datetime']}")
-    print()
-    print("Sort By:\n1. DATE - sort by date\n2. TIME - sort by time\n3. DATETIME - sort by date & time\n4. COST - sort by money transaction\n5. QUIT\nASC - ascending DESC - descending\n")
-
+def _sort(data: list) -> None:
     while True:
+        clear()
+        print("--- Keep Track of Your Transactions ---\n")
+        for transaction in data:
+            print(f"{transaction['way']}{transaction['money_transaction']} {transaction['currency']} at {transaction['datetime']}")
+        print()
+        print("Sort By:\n1. DATETIME - sort by date & time\n2. COST - sort by money transaction\n3. QUIT\nASC - ascending DESC - descending\n")
         way = input("INPUT: ").lower().strip()
 
         if way == "quit":
             break
-
-        if not way.isalpha():
-            print("Error: please enter valid input...")
-            continue
         
         if not " " in way:
             print("Error: Please enter <sortby> and <ASC/DESC>...")
+            sleep(1.5)
             continue
 
         way = way.split()
@@ -384,27 +381,24 @@ def _sort(data: dict) -> None:
 
         if level not in ("asc", "desc"):
             print("Error: please enter ASC or DESC as a second argument...")
+            sleep(1.5)
             continue
         
         match sortby:
-            case "date":
-                pass
-
-            case "time":
-                pass
-
             case "datetime":
-                pass
+                data = sorted(data, key=lambda elem: parse(elem["datetime"]))
 
             case "cost":
-                pass
+                data = sorted(data, key=lambda elem: elem["money_transaction"])
 
             case _:
                 print("Error: INVALID <sortby>")
-        break
+                sleep(1.5)
+        if level == "desc":
+            data.reverse()
+    return
 
-        
-
+# Last transactions manipulating
 def last_transactions(nickname: str) -> None:
     clear()
     slogan: str = "--- Keep Track of Your Transactions ---\n"
@@ -415,25 +409,28 @@ def last_transactions(nickname: str) -> None:
             number = int(input("INPUT: "))
             break
 
-        except TypeError:
+        except ValueError:
             print("Error: please enter a number...")
             sleep(0.5)
             continue
-    data = open_file("transactions", number, nickname=nickname)
-    clear()
-    print(slogan)
-    for transaction in data:
-        print(f"{transaction['way']}{transaction['money_transaction']} {transaction['currency']} at {transaction['datetime']}")
-    print()
-    print("MENU:")
-    print("1. SORT\n2. FIND <date/time>\n3. QUIT\n")
 
+    data = open_file("transactions", number, nickname=nickname)
+    
     while True:
+        clear()
+        print(slogan)
+        for transaction in data:
+            print(f"{transaction['way']}{transaction['money_transaction']} {transaction['currency']} at {transaction['datetime']}")
+        print()
+        print("MENU:")
+        print("1. SORT\n2. FIND <date/time>\n3. QUIT\n")
+
         menu_choice = input("INPUT: ").lower().strip()
 
         # Checking #1 if input is valid
         if not menu_choice.isalpha():
             print("Error: please enter a VALID function...")
+            sleep(1.5)
             continue
         
         # Quit
@@ -457,16 +454,17 @@ def last_transactions(nickname: str) -> None:
                 # Only function was given
                 if not arg:
                     print("Error: FIND function takes argument <date/time>")
+                    sleep(1.5)
                 
                 # Check whether <date> is correct
                 try:
                     transaction_datetime = parse(arg)
 
-                except _parser.ParserError:
+                except (_parser.ParserError, TypeError):
                     print("Error: given date/time is invalid... Please enter at least year...")
+                    sleep(1.5)
 
             # Invalid Function
             case _:
                 print(f"Error: {func.upper()} is not a valid function...")
-
-
+                sleep(1.5)

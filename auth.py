@@ -66,10 +66,10 @@ def authorization() -> tuple[str, str]:
         # If length == 2 -> it should be valid/invalid email & password
         if len(inpt.split()) == 2:
             nn, password = inpt.split()
-            dct = open_file(table_name="users")
+            data = open_file(table_name="users")
 
             # Checking password with bcrypt (because passwords are hidden)
-            if nn in dct and bcrypt.checkpw(password.encode(), dct[nn]["password"][2:-1].encode()):
+            if nn in data and bcrypt.checkpw(password.encode(), data[nn]["password"][2:-1].encode()):
                 return nn, password
             else:
                 print("Error: Incorrect email or password")

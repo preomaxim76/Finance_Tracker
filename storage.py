@@ -48,8 +48,8 @@ def create_table_if_not_exists(table_name: str) -> None:
 
     return
 
-# Opens file (in reality it opens a database (users/transactions)) and returns its content
-def open_file(table_name: str, count: int = 0, nickname: str="") -> dict:
+# Opens file (in reality it opens a database (users/transactions)) and returns its content (list or dict)
+def open_file(table_name: str, count: int = 0, nickname: str=""):
     create_table_if_not_exists("users")
     create_table_if_not_exists("transactions")
 
