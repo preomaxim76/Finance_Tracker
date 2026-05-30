@@ -356,14 +356,19 @@ def curr_overview(currency: str, user_currency: str) -> None:
         print()
 
 # Sorting for last_transactions function
-def _sort(data: list) -> None:
+def _sort(data: list, mode:str = "basic") -> None:
     while True:
         clear()
         print("--- Keep Track of Your Transactions ---\n")
-        for transaction in data:
-            print(f"{transaction['way']}{transaction['money_transaction']} {transaction['currency']} at {transaction['datetime']}")
+        if mode == "basic":
+            for transaction in data:
+                print(f"{transaction['way']}{transaction['money_transaction']} {transaction['currency']} at {transaction['datetime']}")
+        else:
+            for count, transaction in enumerate(data, start=1):
+                print(f"{count}. {transaction['way']}{transaction['money_transaction']} {transaction['currency']} at {transaction['datetime']}")
+                print(f"   Description: {transaction['description']}")
         print()
-        print("Sort By:\n1. DATETIME - sort by date & time\n2. COST - sort by money transaction\n3. QUIT\nASC - ascending DESC - descending\n")
+        print("Sort By:\n1. DATE - sort by date\n2. COST - sort by money transaction\n3. QUIT\nASC - ascending DESC - descending\n")
         way = input("INPUT: ").lower().strip()
 
         if way == "quit":
@@ -385,7 +390,7 @@ def _sort(data: list) -> None:
             continue
         
         match sortby:
-            case "datetime":
+            case "date":
                 data = sorted(data, key=lambda elem: parse(elem["datetime"]))
 
             case "cost":
@@ -414,24 +419,19 @@ def last_transactions(nickname: str) -> None:
             sleep(0.5)
             continue
 
-    data = open_file("transactions", number, nickname=nickname)
+    data: list = open_file("transactions", number, nickname=nickname)
     
     while True:
         clear()
         print(slogan)
         for transaction in data:
+            transaction["datetime"] = transaction["datetime"]
             print(f"{transaction['way']}{transaction['money_transaction']} {transaction['currency']} at {transaction['datetime']}")
         print()
         print("MENU:")
-        print("1. SORT\n2. FIND <date/time>\n3. QUIT\n")
+        print("1. SORT - sort this list\n2. FIND <date> - find all transactions\n3. QUIT\n")
 
         menu_choice = input("INPUT: ").lower().strip()
-
-        # Checking #1 if input is valid
-        if not menu_choice.isalpha():
-            print("Error: please enter a VALID function...")
-            sleep(1.5)
-            continue
         
         # Quit
         if menu_choice == "quit":
@@ -447,23 +447,38 @@ def last_transactions(nickname: str) -> None:
         match func:
             # SORT
             case "sort":
-                _sort(data)
+                if number > 1:
+                    _sort(data)
+                else:
+                    print("You can't use this function with only one transaction selected...")
+                    sleep(1.8)
 
             # FIND
             case "find":
                 # Only function was given
                 if not arg:
-                    print("Error: FIND function takes argument <date/time>")
+                    print("Error: FIND function takes argument <date>")
                     sleep(1.5)
+                    continue
                 
                 # Check whether <date> is correct
                 try:
-                    transaction_datetime = parse(arg)
+                    transaction_datetime = parse(arg).date()
 
                 except (_parser.ParserError, TypeError):
                     print("Error: given date/time is invalid... Please enter at least year...")
                     sleep(1.5)
-
+                    continue
+                
+                transactions: list = open_file("transactions", 0, nickname, transaction_datetime)
+                if not transactions:
+                    print("Nothing was found for this date...")
+                    sleep(2)
+                else:
+                    print("Transactions found...")
+                    sleep(1)
+                    _sort(transactions, mode="find")
+                    
             # Invalid Function
             case _:
                 print(f"Error: {func.upper()} is not a valid function...")

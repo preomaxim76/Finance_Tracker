@@ -49,7 +49,7 @@ def create_table_if_not_exists(table_name: str) -> None:
     return
 
 # Opens file (in reality it opens a database (users/transactions)) and returns its content (list or dict)
-def open_file(table_name: str, count: int = 0, nickname: str=""):
+def open_file(table_name: str, count: int = 0, nickname: str="", tran_time=None):
     create_table_if_not_exists("users")
     create_table_if_not_exists("transactions")
 
@@ -73,10 +73,16 @@ def open_file(table_name: str, count: int = 0, nickname: str=""):
     elif table_name == "transactions":
         userId = get_user_id(nickname)
         if count == 0:
-            c.execute("""
-                SELECT money_transaction, way, currency, datetime, description FROM users 
-                  JOIN transactions ON users.userId = transactions.transaction_id
-                      WHERE transaction_id = ?;""", (userId, ))
+            if tran_time:
+                c.execute("""
+                    SELECT money_transaction, way, currency, datetime, description FROM users 
+                    JOIN transactions ON users.userId = transactions.transaction_id
+                        WHERE transaction_id = ? AND datetime LIKE ?;""", (userId, tran_time.strftime("%Y-%m-%d") + "%"))
+            else:
+                c.execute("""
+                    SELECT money_transaction, way, currency, datetime, description FROM users 
+                    JOIN transactions ON users.userId = transactions.transaction_id
+                        WHERE transaction_id = ?;""", (userId, ))
         else:
             c.execute("SELECT COUNT (*) FROM transactions WHERE transaction_id = ?;", (userId, ))
             transaction_count = c.fetchone()[0]
@@ -92,8 +98,6 @@ def open_file(table_name: str, count: int = 0, nickname: str=""):
         d = c.fetchall()
         data = [{key: value for key, value in dict(row).items()} for row in d]
     
-    # Any other table? 
-
     conn.commit()
     conn.close()
     
