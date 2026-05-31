@@ -6,6 +6,7 @@ from storage import open_file
 from requests import get
 import os
 from dotenv import load_dotenv
+import bcrypt
 
 load_dotenv()
 API_KEY = os.getenv("CURRENT_CURRENCY_VALUE_API")
@@ -79,35 +80,41 @@ def settings(user_data: dict, nickname: str, password: str) -> dict:
                 old_currency = currency
                 to_return = change_currency(to_return, first=False)
                 new_currency = to_return["user_currency"]
-                
-                clear()
-                print("Would you like to change your money amount to match your new currency?")
-                while True:
-                    change_money_value = input("Enter: ")
-                    if change_money_value.lower() in ("yes", "y"):
-                        clear()
-                        other_currencies = to_return["other_currencies"]
-
-                        if old_currency in other_currencies:
-                            to_return["money"] = to_return["money"] / to_return["other_currencies"][old_currency]
-
-                        else:
-                            r = get(f"https://v6.exchangerate-api.com/v6/{API_KEY}/latest/{new_currency}")
-                            currency_value = r.json()["conversion_rates"][old_currency]
-                            to_return["money"] = to_return["money"] / currency_value
+                if new_currency == old_currency:
+                    clear()
+                    print(f"Currency has been successfully changed from {old_currency} to {to_return['user_currency']}.")
+                    sleep(2)
+                else:
+                    clear()
+                    print("Would you like to change your money amount to match your new currency?")
+                    while True:
+                        change_money_value = input("Enter: ")
+                        if change_money_value.lower() in ("yes", "y"):
+                            clear()
+                            other_currencies = to_return["other_currencies"]
                             
-                        print(f"Currency has been successfully changed from {old_currency} to {to_return['user_currency']}")
-                        print(f"Your total money has changed: {round(to_return['money'], 3)} to match your new currency.")
-                        sleep(2.5)
-                        break
-                    elif change_money_value.lower() in ("no", "n"):
-                        clear()
-                        print(f"Currency has been successfully changed from {old_currency} to {to_return['user_currency']}.")
-                        sleep(2)
-                        break
-                    else:
-                        print("Please enter 'yes' or 'no'.")
-                        sleep(.5)
+                            if old_currency in other_currencies:
+                                to_return["money"] = to_return["money"] / to_return["other_currencies"][old_currency]
+
+                            else:
+                                r = get(f"https://v6.exchangerate-api.com/v6/{API_KEY}/latest/{new_currency}")
+                                print(r.json())
+                                sleep(3)
+                                currency_value = r.json()["conversion_rates"][old_currency]
+                                to_return["money"] = to_return["money"] / currency_value
+                                
+                            print(f"Currency has been successfully changed from {old_currency} to {to_return['user_currency']}")
+                            print(f"Your total money has changed: {round(to_return['money'], 3)} to match your new currency.")
+                            sleep(2.5)
+                            break
+                        elif change_money_value.lower() in ("no", "n"):
+                            clear()
+                            print(f"Currency has been successfully changed from {old_currency} to {to_return['user_currency']}.")
+                            sleep(2)
+                            break
+                        else:
+                            print("Please enter 'yes' or 'no'.")
+                            sleep(.5)
 
                 
                 
@@ -135,11 +142,10 @@ def settings(user_data: dict, nickname: str, password: str) -> dict:
                     to_return["password"] = change_password()
                     to_return["password_is_changed"] = True
                     print("Your password has been successfully changed.")
+                    password = to_return["password"]
                 else:
                     print("Invalid password")
-                    sleep(2)
-                
-                password = to_return["password"]
+                    sleep(1.5)
                 
                 sleep(2)
                 continue
