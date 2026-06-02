@@ -5,14 +5,22 @@ Finance Tracker, fully written in Python, is a TUI application to help people ma
 
 *** PROJECT ARCHITECTURE ***
 1. main.py
-   <sth>
+   Main.py is the main file to launch other files. 
 2. auth.py
-   <sth>
+   Auth.py is the file that has functions related to signing up / logging in. It also includes some functions that are later being used in files like settings.py (f.e. change_nickname, generate_nickname, change_currency, etc.). 
 3. menu.py
-   <sth>
+   Menu.py is the most used file of them all. It connects all the parts together (settings, finances, ai, etc.). It is literally a menu, to which user comes back over and over again to choose actions and view their changes, to access other functions/features.
 4. settings.py
    <sth>
-5. 
+5. finance.py
+   <sth>
+6. ai.py
+   <sth>
+7. storage.py
+   <sth>
+8. utils.py
+   <sth>
+
 
 - Signing Up / Loging in
 Finance Tracker has a working database, that is handled using sqlite3 (a light version of sql) in the code (storage.py).
